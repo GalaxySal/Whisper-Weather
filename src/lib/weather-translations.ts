@@ -1,0 +1,135 @@
+export const weatherTranslations = {
+  tr: {
+    // OpenWeatherMap condition codes
+    'clear sky': 'Açık gökyüzü',
+    'few clouds': 'Az bulutlu',
+    'scattered clouds': 'Parçalı bulutlu',
+    'broken clouds': 'Yer yer çok bulutlu',
+    'shower rain': 'Sağanak yağmur',
+    'rain': 'Yağmurlu',
+    'thunderstorm': 'Gök gürültülü fırtına',
+    'snow': 'Karlı',
+    'mist': 'Sisli',
+    'overcast clouds': 'Kapalı bulutlu',
+    'light rain': 'Hafif yağmur',
+    'moderate rain': 'Orta şiddetli yağmur',
+    'heavy intensity rain': 'Yoğun yağmur',
+    'very heavy rain': 'Çok yoğun yağmur',
+    'extreme rain': 'Aşırı yağmur',
+    'freezing rain': 'Dondurucu yağmur',
+    'light intensity shower rain': 'Hafif sağanak yağmur',
+    'heavy intensity shower rain': 'Yoğun sağanak yağmur',
+    'ragged shower rain': 'Düzensiz sağanak yağmur',
+    'light snow': 'Hafif kar',
+    'heavy snow': 'Yoğun kar',
+    'sleet': 'Karla karışık yağmur',
+    'light shower sleet': 'Hafif karla karışık sağanak',
+    'shower sleet': 'Karla karışık sağanak',
+    'light rain and snow': 'Hafif yağmur ve kar',
+    'rain and snow': 'Yağmur ve kar',
+    'light shower snow': 'Hafif kar sağanağı',
+    'shower snow': 'Kar sağanağı',
+    'heavy shower snow': 'Yoğun kar sağanağı',
+    'fog': 'Sis',
+    'tornado': 'Kasırga',
+    'tropical storm': 'Tropik fırtına',
+    'hurricane': 'Kasırga',
+    'cold': 'Soğuk',
+    'hot': 'Sıcak',
+    'windy': 'Rüzgarlı',
+    'hail': 'Dolu',
+    'dust': 'Toz',
+    'sand': 'Kum',
+    'ash': 'Kül',
+    'squall': 'Hortum',
+    'funnel cloud': 'Hortum bulutu',
+    'calm': 'Sakin',
+    'light breeze': 'Hafif esinti',
+    'gentle breeze': 'Yumuşak esinti',
+    'moderate breeze': 'Orta şiddetli esinti',
+    'fresh breeze': 'Taze esinti',
+    'strong breeze': 'Güçlü esinti',
+    'near gale': 'Neredeyse fırtına',
+    'gale': 'Fırtına',
+    'severe gale': 'Şiddetli fırtına',
+    'storm': 'Fırtına',
+    'violent storm': 'Şiddetli fırtına',
+    'hurricane force': 'Kasırga şiddetinde',
+  },
+  en: {
+    'clear sky': 'Clear sky',
+    'few clouds': 'Few clouds',
+    'scattered clouds': 'Scattered clouds',
+    'broken clouds': 'Broken clouds',
+    'shower rain': 'Shower rain',
+    'rain': 'Rain',
+    'thunderstorm': 'Thunderstorm',
+    'snow': 'Snow',
+    'mist': 'Mist',
+    'overcast clouds': 'Overcast clouds',
+    'light rain': 'Light rain',
+    'moderate rain': 'Moderate rain',
+    'heavy intensity rain': 'Heavy intensity rain',
+    'very heavy rain': 'Very heavy rain',
+    'extreme rain': 'Extreme rain',
+    'freezing rain': 'Freezing rain',
+    'light intensity shower rain': 'Light intensity shower rain',
+    'heavy intensity shower rain': 'Heavy intensity shower rain',
+    'ragged shower rain': 'Ragged shower rain',
+    'light snow': 'Light snow',
+    'heavy snow': 'Heavy snow',
+    'sleet': 'Sleet',
+    'light shower sleet': 'Light shower sleet',
+    'shower sleet': 'Shower sleet',
+    'light rain and snow': 'Light rain and snow',
+    'rain and snow': 'Rain and snow',
+    'light shower snow': 'Light shower snow',
+    'shower snow': 'Shower snow',
+    'heavy shower snow': 'Heavy shower snow',
+    'fog': 'Fog',
+    'tornado': 'Tornado',
+    'tropical storm': 'Tropical storm',
+    'hurricane': 'Hurricane',
+    'cold': 'Cold',
+    'hot': 'Hot',
+    'windy': 'Windy',
+    'hail': 'Hail',
+    'dust': 'Dust',
+    'sand': 'Sand',
+    'ash': 'Ash',
+    'squall': 'Squall',
+    'funnel cloud': 'Funnel cloud',
+    'calm': 'Calm',
+    'light breeze': 'Light breeze',
+    'gentle breeze': 'Gentle breeze',
+    'moderate breeze': 'Moderate breeze',
+    'fresh breeze': 'Fresh breeze',
+    'strong breeze': 'Strong breeze',
+    'near gale': 'Near gale',
+    'gale': 'Gale',
+    'severe gale': 'Severe gale',
+    'violent storm': 'Violent storm',
+    'storm': 'Storm',
+    'hurricane force': 'Hurricane force',
+  }
+} as const
+
+export function translateWeatherCondition(condition: string, language: 'tr' | 'en' = 'tr'): string {
+  const translations = weatherTranslations[language]
+  
+  // Tam eşleşme ara
+  if (translations[condition as keyof typeof translations]) {
+    return translations[condition as keyof typeof translations]
+  }
+  
+  // Case-insensitive eşleşme ara
+  const lowerCondition = condition.toLowerCase()
+  for (const [key, value] of Object.entries(translations)) {
+    if (key.toLowerCase() === lowerCondition) {
+      return value
+    }
+  }
+  
+  // Eşleşme bulunamazsa orijinal metni döndür
+  return condition
+}

@@ -1,0 +1,63 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Whisper Weather",
+  "version": "1.0.1",
+  "identifier": "com.zentaria.whisper-weather",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Whisper Weather",
+        "width": 1200,
+        "height": 800,
+        "minWidth": 800,
+        "minHeight": 600,
+        "decorations": true,
+        "transparent": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; connect-src https://api.openweathermap.org https://nominatim.openstreetmap.org https://weather.com https://*.supabase.co; img-src 'self' data: https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
+    },
+    "withGlobalTauri": true
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "publisher": "Zentaria",
+    "category": "Weather",
+    "shortDescription": "Modern weather application with smooth animations",
+    "longDescription": "Whisper Weather is a modern, cross-platform weather application with smooth animations, multi-language support, and real-time weather updates."
+  },
+  "plugins": {
+    "shell": {
+      "open": true
+    },
+    "opener": {},
+    "store": {
+      "default": "settings.json"
+    },
+    "updater": {
+      "active": true,
+      "endpoints": ["https://raw.githubusercontent.com/GalaxySal/Whisper-Weather/main/latest.json"],
+      "dialog": false,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDZCQTdGODU3QzJERUQ0MjcKUldRbjFON0NWL2luYXo2QW9Mb3ZDbGJhVmVPQyswNVF2YVlSR1BTbHhmY2xXcm8vYXJLQnU5MDgK",
+      "windows": {
+        "installMode": "passive"
+      }
+    },
+    "notification": {}
+  }
+}

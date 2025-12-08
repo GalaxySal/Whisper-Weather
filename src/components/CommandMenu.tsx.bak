@@ -1,0 +1,107 @@
+"use client"
+
+import * as React from "react"
+import { Home, User, Settings, LogOut, Search } from "lucide-react"
+import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command"
+import { useLanguage } from '@/hooks/use-language'
+import { translations } from '@/lib/translations'
+import { supabase } from '@/lib/supabase'
+
+interface CommandMenuProps {
+  onPageChange: (page: string) => void
+  onCitySearch: (city: string) => void
+}
+
+export function CommandMenu({ onPageChange, onCitySearch }: CommandMenuProps) {
+  const [open, setOpen] = React.useState(false)
+  const { language } = useLanguage()
+  const t = translations[language]
+
+  React.useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if ((e.key === "k" && (e.metaKey || e.ctrlKey)) || 
+          (e.key === "/" && !e.ctrlKey && !e.metaKey && !e.altKey)) {
+        e.preventDefault()
+        setOpen((open) => !open)
+      }
+    }
+
+    document.addEventListener("keydown", down)
+    return () => document.removeEventListener("keydown", down)
+  }, [])
+
+  const handleNavigation = (page: string) => {
+    onPageChange(page)
+    setOpen(false)
+  }
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    setOpen(false)
+  }
+
+  const handleCitySelect = (city: string) => {
+    onCitySearch(city)
+    setOpen(false)
+  }
+
+  return (
+    <CommandDialog open={open} onOpenChange={setOpen}>
+      <CommandInput placeholder={language === 'tr' ? 'Komut yazın veya ara...' : 'Type a command or search...'} />
+      <CommandList>
+        <CommandEmpty>
+          {language === 'tr' ? 'Sonuç bulunamadı.' : 'No results found.'}
+        </CommandEmpty>
+        
+        <CommandGroup heading={language === 'tr' ? 'Navigasyon' : 'Navigation'}>
+          <CommandItem onSelect={() => handleNavigation('home')}>
+            <Home className="mr-2 h-4 w-4" />
+            <span>{t.navigation.home}</span>
+          </CommandItem>
+          <CommandItem onSelect={() => handleNavigation('profile')}>
+            <User className="mr-2 h-4 w-4" />
+            <span>{t.navigation.profile}</span>
+          </CommandItem>
+          <CommandItem onSelect={() => handleNavigation('settings')}>
+            <Settings className="mr-2 h-4 w-4" />
+            <span>{t.navigation.settings}</span>
+          </CommandItem>
+        </CommandGroup>
+
+        <CommandSeparator />
+
+        <CommandGroup heading={language === 'tr' ? 'Popüler Şehirler' : 'Popular Cities'}>
+          <CommandItem onSelect={() => handleCitySelect('Istanbul')}>
+            <Search className="mr-2 h-4 w-4" />
+            <span>Istanbul</span>
+          </CommandItem>
+          <CommandItem onSelect={() => handleCitySelect('Ankara')}>
+            <Search className="mr-2 h-4 w-4" />
+            <span>Ankara</span>
+          </CommandItem>
+          <CommandItem onSelect={() => handleCitySelect('Izmir')}>
+            <Search className="mr-2 h-4 w-4" />
+            <span>Izmir</span>
+          </CommandItem>
+          <CommandItem onSelect={() => handleCitySelect('London')}>
+            <Search className="mr-2 h-4 w-4" />
+            <span>London</span>
+          </CommandItem>
+          <CommandItem onSelect={() => handleCitySelect('New York')}>
+            <Search className="mr-2 h-4 w-4" />
+            <span>New York</span>
+          </CommandItem>
+        </CommandGroup>
+
+        <CommandSeparator />
+
+        <CommandGroup heading={language === 'tr' ? 'Sistem' : 'System'}>
+          <CommandItem onSelect={handleLogout}>
+            <LogOut className="mr-2 h-4 w-4" />
+            <span>{t.navigation.logout}</span>
+          </CommandItem>
+        </CommandGroup>
+      </CommandList>
+    </CommandDialog>
+  )
+}
