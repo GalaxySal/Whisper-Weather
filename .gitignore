@@ -18,6 +18,9 @@ dist-ssr
 .env.production
 .env.*.local
 
+# Environment templates
+.env.example
+
 # Tauri keys and secrets
 .tauri/
 *.key
