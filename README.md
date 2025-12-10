@@ -14,6 +14,15 @@ Modern cross-platform weather app with real-time updates.
 - API query logging
 - Auto-update system
 
+## CI/CD Status
+- **Build**: [![Build](https://github.com/GalaxySal/Whisper-Weather/actions/workflows/build.yml/badge.svg?branch=dev)](https://github.com/GalaxySal/Whisper-Weather/actions/workflows/build.yml)
+- **Release**: [![Release](https://github.com/GalaxySal/Whisper-Weather/actions/workflows/release.yml/badge.svg)](https://github.com/GalaxySal/Whisper-Weather/actions/workflows/release.yml)
+- **Platforms**:
+  - Windows: ✅ Passed
+  - macOS: ✅ Passed
+  - Linux: ✅ Passed
+- **First CI/CD Pipeline**: ✅ Successfully completed
+
 ## Installation
 ```bash
 npm install
@@ -21,17 +30,6 @@ npm run tauri dev
 npm run tauri build
 ```
 
-## Build Status
-- **Development**: [![dev branch build](https://img.shields.io/github/actions/workflow/status/GalaxySal/Whisper-Weather/build.yml?branch=dev)](https://github.com/GalaxySal/Whisper-Weather/actions)
-- **Release**: [![release build](https://img.shields.io/github/actions/workflow/status/GalaxySal/Whisper-Weather/release.yml)](https://github.com/GalaxySal/Whisper-Weather/actions)
-
-## Version Information
-- **Current Version**: [![version](https://img.shields.io/github/v/release/GalaxySal/Whisper-Weather)](https://github.com/GalaxySal/Whisper-Weather/releases)
-- **Release Notes**: [View latest release](https://github.com/GalaxySal/Whisper-Weather/releases/latest)
-
-## Download
-- [Latest Release](https://github.com/GalaxySal/Whisper-Weather/releases/latest)
-- [Development Builds](https://github.com/GalaxySal/Whisper-Weather/actions)
-
 ## License
-MIT License - see LICENSE file for details
+MIT License - see [LICENSE](https://github.com/GalaxySal/Whisper-Weather?tab=MIT-1-ov-file#readme) file for details
+
