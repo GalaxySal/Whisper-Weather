@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useTauri } from '@/hooks/use-tauri'
 import { useLanguage } from '@/hooks/use-language'
 import { translations } from '@/lib/translations'
@@ -29,7 +29,7 @@ export default function SystemResources() {
   const [systemData, setSystemData] = useState<SystemData | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const fetchSystemData = async () => {
+  const fetchSystemData = useCallback(async () => {
     try {
       const data = await getSystemResources()
       setSystemData(data as SystemData)
@@ -38,7 +38,7 @@ export default function SystemResources() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [getSystemResources])
 
   useEffect(() => {
     fetchSystemData()
@@ -47,7 +47,7 @@ export default function SystemResources() {
     const interval = setInterval(fetchSystemData, 2000)
     
     return () => clearInterval(interval)
-  }, [])
+  }, [fetchSystemData])
 
   if (!isTauri) {
     return (

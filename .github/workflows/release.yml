@@ -78,13 +78,11 @@ jobs:
     - name: Install dependencies
       run: npm ci
       
-    - name: Build application
-      run: npm run tauri:build
-      timeout-minutes: 15
-      
     - name: Build Tauri app
       uses: tauri-apps/tauri-action@v0
       timeout-minutes: 30
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tagName: ${{ github.ref_name }}
         releaseName: 'Whisper Weather ${{ github.ref_name }}'
@@ -92,13 +90,3 @@ jobs:
         releaseDraft: false
         prerelease: ${{ contains(github.ref_name, 'dev') }}
         includeDebug: false
-        
-    - name: Upload Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ needs.create-release.outputs.upload_url }}
-        asset_path: src-tauri/target/release/bundle/${{ matrix.ext }}/${{ matrix.name }}.${{ matrix.ext }}
-        asset_name: ${{ matrix.name }}.${{ matrix.ext }}
-        content_type: application/octet-stream

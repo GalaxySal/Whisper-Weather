@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { invoke } from '@tauri-apps/api/core'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
@@ -123,12 +123,7 @@ function AdminDashboard() {
   const [selectedTab, setSelectedTab] = useState('overview')
   const [selectedBug, setSelectedBug] = useState<BugReport | null>(null)
 
-  // Admin kontrolü
-  useEffect(() => {
-    checkAdminAccess()
-  }, [])
-
-  const checkAdminAccess = async () => {
+  const checkAdminAccess = useCallback(async () => {
     setIsLoading(true)
     
     try {
@@ -142,13 +137,8 @@ function AdminDashboard() {
         return
       }
 
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        setIsAdmin(false)
-        setIsLoading(false)
-        return
-      }
+      const user = sessionData.session.user
+      console.log('DEBUG: User session found:', user.email)
 
       // Admin email kontrolü
       const adminEmails = ['admin@zentaira.com', 'developer@zentaira.com', 'support@zentaira.com', 'nazimpala5170@gmail.com']
@@ -156,71 +146,63 @@ function AdminDashboard() {
                         user.user_metadata?.role === 'admin' ||
                         user.user_metadata?.role === 'developer'
 
+      console.log('DEBUG: Admin check result:', { email: user.email, isAdminUser })
       setIsAdmin(isAdminUser)
-      
+
       if (isAdminUser) {
-        loadDashboardData()
-      }
-    } catch (error) {
-      console.error('Admin check failed:', error)
-      setIsAdmin(false)
-    } finally {
-      setIsLoading(false)
-    }
-  }
+        console.log('DEBUG: Loading dashboard data...')
+        
+        // Backend'den verileri çek
+        const [statsData, bugsData, systemData, apiQueriesData] = await Promise.all([
+          invoke('get_user_stats'),
+          invoke('get_bug_reports'),
+          invoke('get_system_info'),
+          invoke('get_api_queries') // Yeni API queries endpoint
+        ])
 
-  const loadDashboardData = async () => {
-    try {
-      console.log('DEBUG: Loading dashboard data...')
-      
-      // Backend'den verileri çek
-      const [statsData, bugsData, systemData, apiQueriesData] = await Promise.all([
-        invoke('get_user_stats'),
-        invoke('get_bug_reports'),
-        invoke('get_system_info'),
-        invoke('get_api_queries') // Yeni API queries endpoint
-      ])
+        console.log('DEBUG: Stats data:', statsData)
+        console.log('DEBUG: Bugs data:', bugsData)
+        console.log('DEBUG: System data:', systemData)
+        console.log('DEBUG: API queries data:', apiQueriesData)
 
-      console.log('DEBUG: Stats data:', statsData)
-      console.log('DEBUG: Bugs data:', bugsData)
-      console.log('DEBUG: System data:', systemData)
-      console.log('DEBUG: API queries data:', apiQueriesData)
+        // Bug reports verisini kontrol et
+        if (bugsData && typeof bugsData === 'object' && 'data' in bugsData && Array.isArray(bugsData.data)) {
+          setBugReports(bugsData.data as BugReport[])
+        } else {
+          console.error('DEBUG: bugsData is not an array:', bugsData)
+          setBugReports([])
+        }
 
-      // Data validation - handle ApiResponse format
-      if (bugsData && typeof bugsData === 'object' && 'data' in bugsData && Array.isArray(bugsData.data)) {
-        setBugReports(bugsData.data as BugReport[])
+        if (apiQueriesData && typeof apiQueriesData === 'object' && 'data' in apiQueriesData && Array.isArray(apiQueriesData.data)) {
+          setApiQueries(apiQueriesData.data as ApiQuery[])
+        } else {
+          console.error('DEBUG: apiQueriesData is not an array:', apiQueriesData)
+          setApiQueries([])
+        }
+
+        if (statsData && typeof statsData === 'object' && 'data' in statsData) {
+          setSystemStats(statsData.data as SystemStats)
+        } else {
+          setSystemStats({
+            totalUsers: 0,
+            activeUsers: 0,
+            newUsersThisMonth: 0,
+            totalBugs: 0,
+            resolvedBugs: 0,
+            criticalBugs: 0,
+            systemUptime: '',
+            lastUpdate: '',
+            apiQueriesCount: 0,
+            avgApiResponseTime: 0
+          })
+        }
+
+        setSystemInfo(systemData)
+        
+        console.log('DEBUG: Dashboard data loaded successfully')
       } else {
-        console.error('DEBUG: bugsData is not an array:', bugsData)
-        setBugReports([])
+        console.log('DEBUG: User is not admin, skipping data load')
       }
-
-      if (apiQueriesData && typeof apiQueriesData === 'object' && 'data' in apiQueriesData && Array.isArray(apiQueriesData.data)) {
-        setApiQueries(apiQueriesData.data as ApiQuery[])
-      } else {
-        console.error('DEBUG: apiQueriesData is not an array:', apiQueriesData)
-        setApiQueries([])
-      }
-
-      if (statsData && typeof statsData === 'object' && 'data' in statsData) {
-        setSystemStats(statsData.data as SystemStats)
-      } else {
-        setSystemStats({
-          totalUsers: 0,
-          activeUsers: 0,
-          newUsersThisMonth: 0,
-          totalBugs: 0,
-          resolvedBugs: 0,
-          criticalBugs: 0,
-          systemUptime: '',
-          lastUpdate: '',
-          apiQueriesCount: 0,
-          avgApiResponseTime: 0
-        })
-      }
-
-      setSystemInfo(systemData)
-      
-      console.log('DEBUG: Dashboard data loaded successfully')
     } catch (error) {
       console.error('DEBUG: Failed to load dashboard data:', error)
       console.error('DEBUG: Error details:', JSON.stringify(error, null, 2))
@@ -240,8 +222,15 @@ function AdminDashboard() {
         apiQueriesCount: 0,
         avgApiResponseTime: 0
       })
+    } finally {
+      setIsLoading(false)
     }
-  }
+  }, [])
+
+  // Admin kontrolü
+  useEffect(() => {
+    checkAdminAccess()
+  }, [checkAdminAccess])
 
   const updateBugStatus = async (bugId: string, newStatus: string) => {
     try {
@@ -372,7 +361,7 @@ function AdminDashboard() {
             </div>
             <div className="flex space-x-3">
               <button
-                onClick={loadDashboardData}
+                onClick={checkAdminAccess}
                 className="px-4 py-2 bg-white/10 backdrop-blur-md border border-white/30 rounded-full text-white hover:bg-white/20 transition-all duration-200 flex items-center"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />

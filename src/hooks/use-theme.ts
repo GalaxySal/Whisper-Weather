@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useTauri } from './use-tauri'
 import { listen } from '@tauri-apps/api/event'
 
@@ -10,30 +10,28 @@ export function useTheme() {
   const { saveSettings, loadSettings, getSystemTheme } = useTauri()
 
   // İlk yükleme - Tauri backend'den yükle
-  useEffect(() => {
-    const loadTheme = async () => {
-      try {
-        const settings = await loadSettings()
-        const savedTheme = settings.theme || 'system'
-        setTheme(savedTheme)
-        
-        // Sistem teması ise önce al sonra uygula
-        if (savedTheme === 'system') {
-          const systemTheme = await getSystemTheme()
-          applyTheme(systemTheme === 'dark' ? 'dark' : 'light')
-        } else {
-          applyTheme(savedTheme)
-        }
-        
-        setIsThemeReady(true)
-      } catch (error) {
-        console.error('Error loading theme from Tauri:', error)
-        setIsThemeReady(true)
+  const loadTheme = useCallback(async () => {
+    try {
+      const settings = await loadSettings()
+      const savedTheme = settings.theme || 'system'
+      setTheme(savedTheme)
+      
+      // Sistem teması ise önce al sonra uygula
+      if (savedTheme === 'system') {
+        const systemTheme = await getSystemTheme()
+        applyTheme(systemTheme === 'dark' ? 'dark' : 'light')
+      } else {
+        applyTheme(savedTheme)
       }
+    } catch (error) {
+      console.error('Error loading theme from Tauri:', error)
+      setIsThemeReady(true)
     }
-    
+  }, [loadSettings, getSystemTheme])
+
+  useEffect(() => {
     loadTheme()
-  }, []) // Boş dependency array
+  }, [loadTheme])
 
   const applyTheme = (themeValue: Theme) => {
     const root = window.document.documentElement

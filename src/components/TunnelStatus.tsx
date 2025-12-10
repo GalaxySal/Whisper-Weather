@@ -14,12 +14,12 @@ const TunnelStatusComponent: React.FC = () => {
   const t = translations[language];
   const ALERT_COOLDOWN = 30000; // 30 seconds between alerts
 
-  // Only show tunnel status in Tauri
-  if (!isTauri()) {
-    return null;
-  }
-
   useEffect(() => {
+    // Only show tunnel status in Tauri
+    if (!isTauri()) {
+      return;
+    }
+
     const updateStatus = () => {
       const currentStatus = tunnelService.getCurrentStatus();
       console.log('Tunnel status update:', currentStatus);

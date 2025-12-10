@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useTauri } from './use-tauri'
 
 export function useFavorites() {
@@ -6,25 +6,25 @@ export function useFavorites() {
   const { saveFavoriteCities, loadFavoriteCities } = useTauri()
 
   // İlk yükleme - Tauri backend'den yükle
-  useEffect(() => {
-    const loadFavorites = async () => {
-      try {
-        const cities = await loadFavoriteCities()
-        setFavorites(cities)
-      } catch (error) {
-        console.error('Error loading favorites from Tauri:', error)
-      }
+  const loadFavorites = useCallback(async () => {
+    try {
+      const cities = await loadFavoriteCities()
+      setFavorites(cities)
+    } catch (error) {
+      console.error('Error loading favorites from Tauri:', error)
     }
-    
+  }, [loadFavoriteCities])
+
+  useEffect(() => {
     loadFavorites()
-  }, []) // Boş dependency array
+  }, [loadFavorites])
 
   // Sadece favorites değiştiğinde Tauri backend'e kaydet
   useEffect(() => {
     if (favorites.length > 0) {
       saveFavoriteCities(favorites)
     }
-  }, [favorites]) // Sadece favorites'e bağlı
+  }, [favorites, saveFavoriteCities])
 
   const addFavorite = (city: string) => {
     console.log('addFavorite called with:', city)

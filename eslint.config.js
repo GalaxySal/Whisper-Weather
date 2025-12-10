@@ -5,12 +5,20 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
-  { ignores: ['dist'] },
+  { ignores: ['dist', 'src-tauri/target'] },
   {
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
+      parser: tseslint.parser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        ecmaFeatures: {
+          jsx: true
+        }
+      }
     },
     plugins: {
       'react-hooks': reactHooks,
@@ -23,6 +31,18 @@ export default tseslint.config(
         { allowConstantExport: true },
       ],
     },
+    settings: {
+      react: {
+        version: 'detect'
+      }
+    }
   },
-  js.configs.recommended,
+  {
+    files: ['**/*.js'],
+    ...js.configs.recommended,
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: globals.node,
+    }
+  }
 )

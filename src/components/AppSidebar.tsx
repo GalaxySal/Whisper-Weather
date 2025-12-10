@@ -1,7 +1,7 @@
 import { Moon, Sun, Monitor, Cloud, Languages, LogOut, Home, User, Settings, Info, Cpu, Globe, Bug, Shield } from 'lucide-react'
 import { useTheme } from '@/hooks/use-theme'
 import { useLanguage } from '@/hooks/use-language'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { translations } from '@/lib/translations'
 import { TunnelStatus } from '@/components/TunnelStatus'
@@ -32,12 +32,7 @@ export default function AppSidebar({ user, currentPage, onPageChange }: AppSideb
   const t = translations[language]
   const [isAdmin, setIsAdmin] = useState(false)
 
-  // Admin kontrolü
-  useEffect(() => {
-    checkAdminAccess()
-  }, [user])
-
-  const checkAdminAccess = async () => {
+  const checkAdminAccess = useCallback(async () => {
     if (!user) {
       setIsAdmin(false)
       return
@@ -50,7 +45,12 @@ export default function AppSidebar({ user, currentPage, onPageChange }: AppSideb
                       user.user_metadata?.role === 'developer'
 
     setIsAdmin(isAdminUser)
-  }
+  }, [user])
+
+  // Admin kontrolü
+  useEffect(() => {
+    checkAdminAccess()
+  }, [checkAdminAccess])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()

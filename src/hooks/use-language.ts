@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useTauri } from './use-tauri'
 
 type Language = 'tr' | 'en'
@@ -8,18 +8,18 @@ export function useLanguage() {
   const { saveSettings, loadSettings } = useTauri()
 
   // İlk yükleme - Tauri backend'den yükle
-  useEffect(() => {
-    const loadLanguage = async () => {
-      try {
-        const settings = await loadSettings()
-        setLanguage(settings.language || 'tr')
-      } catch (error) {
-        console.error('Error loading language from Tauri:', error)
-      }
+  const loadLanguage = useCallback(async () => {
+    try {
+      const settings = await loadSettings()
+      setLanguage(settings.language || 'tr')
+    } catch (error) {
+      console.error('Error loading language from Tauri:', error)
     }
-    
+  }, [loadSettings])
+
+  useEffect(() => {
     loadLanguage()
-  }, []) // Boş dependency array
+  }, [loadLanguage])
 
   // Dil değiştiğinde Tauri backend'e kaydet
   const changeLanguage = async (newLanguage: Language) => {

@@ -44,8 +44,9 @@ export function CommandMenu({ onPageChange, onCitySearch }: CommandMenuProps) {
     setOpen(false)
   }
 
+  const { setLanguage } = useLanguage()
+
   const handleLanguageChange = (newLanguage: string) => {
-    const { setLanguage } = useLanguage()
     setLanguage(newLanguage as 'tr' | 'en')
     setOpen(false)
   }
