@@ -1,5 +1,5 @@
 {
-  "version": "1.0.1",
+  "version": "1.0.2",
   "notes": "Version 1.0.1 - API Integration and Bug Fixes\n\nFeatures:\n- Weather API query logging to admin dashboard\n- Improved authentication system\n- Better error handling\n\nBug Fixes:\n- Fixed Supabase authentication issues\n- Resolved API key configuration problems\n- Improved weather data display\n\nTechnical Updates:\n- Updated version to 1.0.1\n- Enhanced API logging system\n- Fixed environment variable loading",
   "pub_date": "2025-12-08T20:00:00Z",
   "platforms": {

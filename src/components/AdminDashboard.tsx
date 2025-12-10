@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { invoke } from '@tauri-apps/api/core'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
+import { SecurityAlert } from './SecurityAlert'
 import { 
   Users, 
   Bug, 
@@ -103,6 +104,7 @@ function AdminDashboard() {
   const { language } = useLanguage()
   const [isAdmin, setIsAdmin] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [showSecurityAlert, setShowSecurityAlert] = useState(true)
   const [bugReports, setBugReports] = useState<BugReport[]>([])
   const [apiQueries, setApiQueries] = useState<ApiQuery[]>([])
   const [systemStats, setSystemStats] = useState<SystemStats>({
@@ -808,6 +810,9 @@ function AdminDashboard() {
             </div>
           </div>
         </div>
+      )}
+      {showSecurityAlert && (
+        <SecurityAlert onClose={() => setShowSecurityAlert(false)} />
       )}
     </div>
   )
