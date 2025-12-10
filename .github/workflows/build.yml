@@ -112,6 +112,7 @@ jobs:
       
     - name: Security audit
       run: cargo audit
+      working-directory: src-tauri
       
     - name: Node.js setup
       uses: actions/setup-node@v4
