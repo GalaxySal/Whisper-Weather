@@ -39,7 +39,15 @@
     "publisher": "Zentaria",
     "category": "Weather",
     "shortDescription": "Modern weather application with smooth animations",
-    "longDescription": "Whisper Weather is a modern, cross-platform weather application with smooth animations, multi-language support, and real-time weather updates."
+    "longDescription": "Whisper Weather is a modern, cross-platform weather application with smooth animations, multi-language support, and real-time weather updates.",
+    "linux": {
+      "deb": {
+        "depends": ["libwebkit2gtk-4.1-0", "libnotify4", "libnss3", "libxss1", "libxtst6", "xdg-utils", "libatspi2.0-0", "libdrm2", "libxcomposite1", "libxdamage1", "libxrandr2", "libgbm1", "libxkbcommon0", "libasound2"]
+      },
+      "appimage": {
+        "bundleMediaFramework": false
+      }
+    }
   },
   "plugins": {
     "shell": {

@@ -88,7 +88,7 @@ jobs:
       
     - name: Build application
       run: npm run tauri:build
-      timeout-minutes: 15
+      timeout-minutes: 20
       
     - name: Create Release
       id: create_release
