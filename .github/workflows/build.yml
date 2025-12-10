@@ -2,11 +2,14 @@ name: Build and Release
 
 on:
   push:
-    branches: [ dev, main ]
+    branches: [ dev ]
   pull_request:
-    branches: [ dev, main ]
+    branches: [ dev ]
   release:
     types: [ published ]
+
+permissions:
+  contents: write
 
 env:
   CARGO_TERM_COLOR: always
@@ -50,7 +53,7 @@ jobs:
       
     - name: Build the app
       uses: tauri-apps/tauri-action@v0
-      timeout-minutes: ${{ matrix.platform == 'windows-latest' && 45 || matrix.platform == 'macos-latest' && 45 || 20 }}
+      timeout-minutes: ${{ matrix.platform == 'windows-latest' && 120 || matrix.platform == 'macos-latest' && 60 || 20 }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         NODE_VERSION: 20.19.0
