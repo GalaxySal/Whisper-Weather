@@ -16,6 +16,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarTrigger,
+  SidebarProvider,
 } from '@/components/ui/sidebar'
 
 interface AppSidebarProps {
@@ -28,8 +29,11 @@ export default function AppSidebar({ currentPage, onPageChange }: AppSidebarProp
   const { language, setLanguage } = useLanguage()
   const t = translations[language]
 
+  console.log('AppSidebar rendering, isTauri:', isTauri());
+
   return (
-    <Sidebar collapsible="icon" variant="inset">
+    <SidebarProvider>
+      <Sidebar collapsible="icon" variant="inset">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -214,15 +218,16 @@ export default function AppSidebar({ currentPage, onPageChange }: AppSidebarProp
 
       <SidebarFooter>
         <SidebarMenu>
-          {isTauri() && (
+          {/* {isTauri() && ( */}
             <SidebarMenuItem>
               <div className="px-2 py-1">
                 <TunnelStatus />
               </div>
             </SidebarMenuItem>
-          )}
+          {/* )} */}
         </SidebarMenu>
       </SidebarFooter>
-    </Sidebar>
+      </Sidebar>
+    </SidebarProvider>
   )
 }

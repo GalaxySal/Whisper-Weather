@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Download, CheckCircle, AlertCircle, RefreshCw, ExternalLink, Zap } from 'lucide-react'
 import { useLanguage } from '@/hooks/use-language'
 import { toast } from 'sonner'
@@ -29,23 +29,15 @@ export default function Updates() {
   const [isDownloading, setIsDownloading] = useState(false)
   const [updateAvailable, setUpdateAvailable] = useState(false)
   const [lastChecked, setLastChecked] = useState<Date | null>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
 
   // Mevcut version'u al
   useEffect(() => {
     if (isTauri) {
-      // Tauri app version
-      const getVersion = async () => {
-        try {
-          const { invoke } = await import('@tauri-apps/api/core')
-          const version = await invoke('get_app_version')
-          setCurrentVersion(version as string)
-        } catch (error) {
-          console.error('Version alınamadı:', error)
-        }
-      }
-      getVersion()
+      // Tauri için sabit version
+      setCurrentVersion('1.0.3')
     } else {
-      // Web version
+      // Web için sabit version
       setCurrentVersion('1.0.3')
     }
 
@@ -61,21 +53,46 @@ export default function Updates() {
     setIsChecking(true)
     
     try {
-      const response = await fetch('https://api.github.com/repos/GalaxySal/Whisper-Weather/releases/latest')
-      const release = await response.json()
+      // GitHub releases'ı çek
+      const response = await fetch('https://api.github.com/repos/GalaxySal/Whisper-Weather/releases')
+      const releases = await response.json()
       
-      setLatestRelease(release)
+      // En son release'ı bul (pre-release ve dev değilse)
+      const latestRelease = releases.find((release: any) => {
+        // Pre-release'leri atla
+        if (release.prerelease) return false
+        
+        // Dev release'larını atla
+        if (release.tag_name.includes('dev') || release.name.includes('dev')) return false
+        
+        // Geçerli semantik version kontrolü (v1.0.3 formatında)
+        const versionPattern = /^v\d+\.\d+\.\d+$/
+        return versionPattern.test(release.tag_name)
+      }) || releases[0]
       
-      // Version karşılaştırması
+      setLatestRelease(latestRelease)
+      
+      // Version karşılaştırması - sadece geçerli sürümleri karşılaştır
       const current = currentVersion.replace('v', '')
-      const latest = release.tag_name.replace('v', '')
+      const latest = latestRelease.tag_name.replace('v', '')
       
-      if (current !== latest) {
+      // Eğer latest release geçerli bir version değilse, güncelleme yok
+      const isValidVersion = /^v?\d+\.\d+\.\d+$/.test(latestRelease.tag_name)
+      
+      console.log('Version check:', { 
+        current, 
+        latest, 
+        available: current !== latest && isValidVersion,
+        isValidVersion,
+        latestTag: latestRelease.tag_name
+      })
+      
+      if (current !== latest && isValidVersion) {
         setUpdateAvailable(true)
         
         // Sessiz bildirim (kullanıcıyı rahatsız etmeyen)
         toast.info('Yeni güncelleme mevcut!', {
-          description: `Versiyon ${release.tag_name} yayınlandı`,
+          description: `Versiyon ${latestRelease.tag_name} yayınlandı`,
           duration: 5000,
           position: 'bottom-right',
           action: {
@@ -85,8 +102,8 @@ export default function Updates() {
         })
       } else {
         setUpdateAvailable(false)
-        toast.success('Güncel!', {
-          description: 'En son sürümü kullanıyorsunuz',
+        toast.success('Uygulama güncel!', {
+          description: `Mevcut sürümünüz: v${current} - En son sürüm`,
           duration: 3000,
           position: 'bottom-right'
         })
@@ -111,7 +128,12 @@ export default function Updates() {
 
   // Güncelleme indir
   const downloadUpdate = async () => {
-    if (!latestRelease) return
+    console.log('downloadUpdate called!', { latestRelease: !!latestRelease, isDownloading })
+    
+    if (!latestRelease) {
+      console.log('No latestRelease, returning')
+      return
+    }
     
     setIsDownloading(true)
     
@@ -119,8 +141,17 @@ export default function Updates() {
       // Platforma uygun dosyayı bul
       const asset = latestRelease.assets.find(asset => {
         if (isTauri) {
-          // Tauri için platform spesifik dosya
-          return asset.name.includes('.exe') || asset.name.includes('.dmg') || asset.name.includes('.deb')
+          // Platform detection
+          const platform = window.__TAURI__?.platform || 'unknown'
+          
+          if (platform === 'win32') {
+            return asset.name.includes('.exe') || asset.name.includes('windows')
+          } else if (platform === 'darwin') {
+            return asset.name.includes('.dmg') || asset.name.includes('macos') || asset.name.includes('apple')
+          } else if (platform === 'linux') {
+            return asset.name.includes('.deb') || asset.name.includes('.rpm') || asset.name.includes('AppImage') || asset.name.includes('linux')
+          }
+          return false
         }
         // Web için source kodu
         return asset.name.includes('source')
@@ -128,35 +159,48 @@ export default function Updates() {
       
       if (!asset) {
         // Asset yoksa GitHub sayfasına yönlendir
-        window.open(latestRelease.html_url, '_blank')
+        console.log('No asset found, opening GitHub releases page')
+        window.open('https://github.com/GalaxySal/Whisper-Weather/releases', '_blank')
+        
+        toast.info('GitHub sayfası açıldı!', {
+          description: 'Tüm sürümleri görmek için releases sayfasını ziyaret edin',
+          duration: 3000,
+          position: 'bottom-right'
+        })
         return
       }
       
       if (isTauri) {
-        // Tauri'de doğrudan indir
-        const { invoke } = await import('@tauri-apps/api/core')
-        await invoke('download_and_install_update', {
-          url: asset.browser_download_url,
-          filename: asset.name
-        })
-        
-        toast.success('İndirme başladı!', {
-          description: 'Güncelleme indiriliyor ve kurulacak...',
-          duration: 5000,
-          position: 'bottom-right'
-        })
+        // Tauri için platforma uygun dosyayı indir
+        try {
+          // Browser'da indirme
+          const link = document.createElement('a')
+          link.href = asset.browser_download_url
+          link.download = asset.name
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          
+          toast.success('İndirme başladı!', {
+            description: `${asset.name} indiriliyor...`,
+            duration: 3000,
+            position: 'bottom-right'
+          })
+        } catch (error) {
+          console.error('İndirme başarısız:', error)
+          // Hata olursa GitHub sayfasına yönlendir
+          window.open(latestRelease.html_url, '_blank')
+          toast.error('İndirme başarısız!', {
+            description: 'GitHub sayfası açıldı',
+            duration: 3000,
+            position: 'bottom-right'
+          })
+        }
       } else {
-        // Web'de doğrudan indir
-        const link = document.createElement('a')
-        link.href = asset.browser_download_url
-        link.download = asset.name
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        
-        toast.success('İndirme başladı!', {
-          description: `${asset.name} indiriliyor...`,
-          duration: 5000,
+        // Web için indirme yapma - sadece bilgi ver
+        toast.info('Web sürümü', {
+          description: 'Güncellemeler için GitHub sayfasını ziyaret edin',
+          duration: 3000,
           position: 'bottom-right'
         })
       }
@@ -173,7 +217,28 @@ export default function Updates() {
     }
   }
 
-  // Format dosya boyutu
+  // Buton render kontrolü
+  useEffect(() => {
+    if (buttonRef.current) {
+      console.log('Button rendered:', buttonRef.current)
+    } else {
+      console.log('Button not rendered')
+    }
+  }, [updateAvailable])
+
+  // Format changelog
+  const formatChangelog = (body: string) => {
+    if (!body) return ''
+    
+    // Markdown formatını temizle ve daha okunakır hale getir
+    return body
+      .replace(/##\s*(.+)/g, '<h3 class="font-bold text-lg mb-2 mt-4">$1</h3>')
+      .replace(/###\s*(.+)/g, '<h4 class="font-semibold text-base mb-2 mt-3">$1</h4>')
+      .replace(/^- (.+)/g, '<li class="ml-4 mb-1">• $1</li>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold">$1</strong>')
+      .replace(/\n\n/g, '</p><p class="mb-2">')
+      .replace(/\n/g, '<br />')
+  }
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes'
     const k = 1024
@@ -268,7 +333,7 @@ export default function Updates() {
                         }
                       </h3>
                       <div className="text-lg font-medium mt-1">
-                        {latestRelease.tag_name}
+                        {latestRelease.tag_name !== 'dev' ? latestRelease.tag_name : (language === 'tr' ? 'Mevcut Sürüm' : 'Current Version')}
                       </div>
                     </div>
                   </div>
@@ -284,9 +349,10 @@ export default function Updates() {
                       {language === 'tr' ? 'Yenilikler' : "What's New"}
                     </h4>
                     <div className="bg-black/20 rounded-lg p-4 max-h-40 overflow-y-auto">
-                      <pre className="text-sm text-white/80 whitespace-pre-wrap">
-                        {latestRelease.body}
-                      </pre>
+                      <div 
+                        className="text-sm text-white/80 leading-relaxed"
+                        dangerouslySetInnerHTML={{ __html: formatChangelog(latestRelease.body) }}
+                      />
                     </div>
                   </div>
                 )}
@@ -307,7 +373,11 @@ export default function Updates() {
                       )}
                     </div>
                     <Button
-                      onClick={downloadUpdate}
+                      ref={buttonRef}
+                      onClick={() => {
+                        console.log('Button clicked!')
+                        downloadUpdate()
+                      }}
                       disabled={isDownloading}
                       className="bg-green-500 hover:bg-green-600 text-white"
                     >
@@ -327,6 +397,16 @@ export default function Updates() {
                 )}
               </div>
             </MotionItem>
+          )}
+
+          {/* Debug Info */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mt-4 pt-4 border-t border-white/10 text-xs text-white/40">
+              <div>Debug Info:</div>
+              <div>updateAvailable: {updateAvailable.toString()}</div>
+              <div>latestRelease: {latestRelease ? latestRelease.tag_name : 'null'}</div>
+              <div>currentVersion: {currentVersion}</div>
+            </div>
           )}
 
           {/* GitHub Link */}

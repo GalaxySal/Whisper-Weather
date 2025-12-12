@@ -18,7 +18,7 @@ jobs:
   build:
     strategy:
       matrix:
-        platform: [ubuntu-latest, windows-latest, macos-latest]
+        platform: [ubuntu-latest, windows-latest, macos-latest, macos-13]
         
     runs-on: ${{ matrix.platform }}
     
@@ -48,19 +48,42 @@ jobs:
         
     - name: Install frontend dependencies
       run: npm ci
-      timeout-minutes: 10
+      timeout-minutes: 20
       continue-on-error: false
       
+    - name: Generate changelog
+      id: changelog
+      run: |
+        # Son tag'i bul
+        LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+        
+        if [ -z "$LAST_TAG" ]; then
+          # İlk release ise tüm commit'leri al
+          CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges)
+        else
+          # Son tag'den bu yana olan commit'leri al
+          CHANGELOG=$(git log $LAST_TAG..HEAD --pretty=format:"- %s (%h)" --no-merges)
+        fi
+        
+        if [ -z "$CHANGELOG" ]; then
+          CHANGELOG="- Initial release"
+        fi
+        
+        # Changelog'i output olarak ayarla
+        echo "changelog<<EOF" >> $GITHUB_OUTPUT
+        echo "$CHANGELOG" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+        
     - name: Build the app
       uses: tauri-apps/tauri-action@v0
-      timeout-minutes: ${{ matrix.platform == 'windows-latest' && 120 || matrix.platform == 'macos-latest' && 60 || 20 }}
+      timeout-minutes: ${{ matrix.platform == 'windows-latest' && 120 || matrix.platform == 'macos-latest' && 120 || 20 }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         NODE_VERSION: 20.19.0
       with:
         tagName: ${{ github.ref_name }}
         releaseName: 'Whisper Weather ${{ github.ref_name }}'
-        releaseBody: 'See the assets to download and install this version.'
+        releaseBody: ${{ steps.changelog.outputs.changelog }}
         releaseDraft: false
         prerelease: false
         includeDebug: false
@@ -128,3 +151,111 @@ jobs:
       
     - name: Security audit
       run: npm audit --audit-level moderate
+
+  build-android:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+      
+    - name: Rust setup
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
+        
+    - name: Rust cache
+      uses: swatinem/rust-cache@v2
+      with:
+        workspaces: src-tauri
+        
+    - name: Sync node version and setup cache
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.19.0'
+        cache: 'npm'
+        
+    - name: Install frontend dependencies
+      run: npm ci
+      timeout-minutes: 5
+      
+    - name: Setup Android environment
+      run: |
+        echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+        echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
+        echo "NDK_HOME=$ANDROID_HOME/ndk/$(ls -1 $ANDROID_HOME/ndk)" >> $GITHUB_ENV
+        
+    - name: Build Android APK
+      run: |
+        cd src-tauri
+        cargo tauri android build
+      timeout-minutes: 60
+        
+    - name: Upload Android artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: whisper-weather-android
+        path: |
+          src-tauri/target/*/android/*/build/outputs/apk/**/*.apk
+        retention-days: 30
+
+  build-ios:
+    runs-on: macos-13
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+        
+    - name: Rust setup
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: aarch64-apple-ios x86_64-apple-ios aarch64-apple-ios-sim
+        
+    - name: Rust cache
+      uses: swatinem/rust-cache@v2
+      with:
+        workspaces: src-tauri
+        
+    - name: Install CocoaPods
+      run: |
+        cd src-tauri
+        sudo gem install cocoapods
+        pod install
+        
+    - name: Sync node version and setup cache
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.19.0'
+        cache: 'npm'
+        
+    - name: Install frontend dependencies
+      run: npm ci
+      timeout-minutes: 5
+      
+    - name: Build iOS app
+      run: |
+        cd src-tauri
+        cargo tauri ios build
+      timeout-minutes: 90
+        
+    - name: Upload iOS artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: whisper-weather-ios
+        path: |
+          src-tauri/target/*/ios/build/Build/Products/Debug-iphoneos/*.app
+        retention-days: 30

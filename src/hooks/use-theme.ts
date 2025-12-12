@@ -23,6 +23,8 @@ export function useTheme() {
       } else {
         applyTheme(savedTheme)
       }
+      
+      setIsThemeReady(true)
     } catch (error) {
       console.error('Error loading theme from Tauri:', error)
       setIsThemeReady(true)

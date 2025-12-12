@@ -14,41 +14,58 @@ const TunnelStatusComponent: React.FC = () => {
   const t = translations[language];
   const ALERT_COOLDOWN = 30000; // 30 seconds between alerts
 
+  console.log('TunnelStatus rendering, isTauri:', isTauri());
+  console.log('window.__TAURI__:', typeof window !== 'undefined' ? window.__TAURI__ : 'window not defined');
+
   useEffect(() => {
     // Only show tunnel status in Tauri
     if (!isTauri()) {
+      console.log('Not Tauri, skipping tunnel status');
       return;
     }
 
-    const updateStatus = () => {
-      const currentStatus = tunnelService.getCurrentStatus();
-      console.log('Tunnel status update:', currentStatus);
-      setStatus(currentStatus);
-      
-      // Check for slow connection and show toast
-      if (currentStatus && currentStatus.response_time_ms > 500) {
-        const now = Date.now();
-        if (now - lastAlertTime > ALERT_COOLDOWN) {
-          toast.error(t.tunnel.title, {
-            description: `${t.tunnel.responseTime}: ${currentStatus.response_time_ms}ms\n${t.tunnel.description}`,
-            duration: 5000,
-            action: {
-              label: 'OK',
-              onClick: () => console.log('Alert dismissed'),
-            },
-          });
-          setLastAlertTime(now);
-        }
+    console.log('Tauri detected, setting up tunnel status');
+
+    const setupTunnel = async () => {
+      try {
+        // Initialize tunnel service if not already initialized
+        await tunnelService.initialize();
+        
+        const updateStatus = () => {
+          const currentStatus = tunnelService.getCurrentStatus();
+          console.log('Tunnel status update:', currentStatus);
+          setStatus(currentStatus);
+          
+          // Check for slow connection and show toast
+          if (currentStatus && currentStatus.response_time_ms > 500) {
+            const now = Date.now();
+            if (now - lastAlertTime > ALERT_COOLDOWN) {
+              toast.error(t.tunnel.title, {
+                description: `${t.tunnel.responseTime}: ${currentStatus.response_time_ms}ms\n${t.tunnel.description}`,
+                duration: 5000,
+                action: {
+                  label: 'OK',
+                  onClick: () => console.log('Alert dismissed'),
+                },
+              });
+              setLastAlertTime(now);
+            }
+          }
+        };
+
+        // Initial status
+        updateStatus();
+
+        // Update status every 5 seconds
+        const interval = setInterval(updateStatus, 5000);
+
+        return () => clearInterval(interval);
+      } catch (error) {
+        console.error('Error setting up tunnel service:', error);
       }
     };
 
-    // Initial status
-    updateStatus();
-
-    // Update status every 5 seconds
-    const interval = setInterval(updateStatus, 5000);
-
-    return () => clearInterval(interval);
+    setupTunnel();
   }, [lastAlertTime, t]);
 
   const formatLastCheck = (timestamp: number) => {

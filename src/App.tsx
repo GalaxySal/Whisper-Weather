@@ -21,13 +21,17 @@ import Updates from "./components/Updates";
 
 // Main App component
 export function AppContent() {
+  console.log('AppContent rendering...');
   const [currentPage, setCurrentPage] = useState('home');
+  console.log('currentPage:', currentPage);
   const [searchCity, setSearchCity] = useState("");
   const [weatherData, setWeatherData] = useState<any>(null);
   const [error, setError] = useState("");
   const { language } = useLanguage();
   const { theme, applyWeatherTheme, isThemeReady } = useTheme();
   const t = translations[language];
+
+  console.log('Theme ready:', isThemeReady);
 
   // Update theme based on weather
   useEffect(() => {
@@ -50,11 +54,12 @@ export function AppContent() {
     // Empty effect to trigger re-render on language change
   }, [language]);
 
-  // Show loading state while theme is being set up
+  // Wait for theme to be ready
   if (!isThemeReady) {
+    console.log('Theme not ready, returning loading...');
     return (
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-gray-600 dark:text-gray-400">Loading...</div>
+      <div className="flex min-h-screen weather-gradient items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
       </div>
     );
   }
@@ -126,6 +131,7 @@ export function AppContent() {
 
   // Sayfa render fonksiyonu
   const renderPage = () => {
+    console.log('renderPage called with currentPage:', currentPage);
     switch (currentPage) {
       case 'explorer':
         return <WeatherExplorerWithErrorBoundary />;
@@ -233,17 +239,23 @@ export function AppContent() {
     }
   };
 
+  // Render the main app
+  console.log('About to return JSX...');
   return (
     <div className="flex min-h-screen weather-gradient">
       {/* Sidebar */}
-      <AppSidebar 
-        currentPage={currentPage} 
-        onPageChange={setCurrentPage} 
-      />
+      <div className="w-16 flex-shrink-0">
+        <AppSidebar 
+          currentPage={currentPage} 
+          onPageChange={setCurrentPage} 
+        />
+      </div>
       
       {/* Main Content */}
-      <div className="flex-1 min-h-screen backdrop-blur-sm bg-black/10">
-        {renderPage()}
+      <div className="flex-1 min-h-screen backdrop-blur-sm bg-black/10 flex items-start justify-center p-4 md:p-6 lg:p-8 pt-8 md:pt-12 lg:pt-16">
+        <div className="w-full max-w-4xl lg:max-w-5xl">
+          {renderPage()}
+        </div>
       </div>
     </div>
   );
