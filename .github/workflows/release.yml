@@ -3,7 +3,6 @@ name: Release
 on:
   push:
     tags:
-      - 'dev'
       - 'v*'
 
 env:
@@ -32,7 +31,7 @@ jobs:
           - Automated release from GitHub Actions
           - Multi-platform builds included
         draft: false
-        prerelease: ${{ contains(github.ref, 'dev') }}
+        prerelease: false
 
   build-and-release:
     needs: create-release
@@ -99,7 +98,7 @@ jobs:
         name: 'Whisper Weather ${{ github.ref_name }}'
         body: 'See the assets to download and install this version.'
         draft: false
-        prerelease: ${{ contains(github.ref_name, 'dev') }}
+        prerelease: false
         files: |
           src-tauri/target/release/bundle/${{ matrix.ext }}/${{ matrix.name }}.${{ matrix.ext }}
           src-tauri/target/release/bundle/${{ matrix.ext }}/${{ matrix.name }}.${{ matrix.ext }}.sig
