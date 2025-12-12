@@ -170,6 +170,7 @@ jobs:
     - name: Build Android APK
       run: |
         cd src-tauri
+        cargo tauri android init
         cargo tauri android build
       timeout-minutes: 60
         
@@ -230,6 +231,7 @@ jobs:
     - name: Build iOS app
       run: |
         cd src-tauri
+        cargo tauri ios init
         cargo tauri ios build
       timeout-minutes: 90
         
