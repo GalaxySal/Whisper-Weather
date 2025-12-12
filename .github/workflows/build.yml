@@ -166,6 +166,15 @@ jobs:
         NDK_VERSION=$(ls -1 $ANDROID_HOME/ndk | head -1)
         echo "NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSION" >> $GITHUB_ENV
         echo "NDK_VERSION=$NDK_VERSION" >> $GITHUB_ENV
+        # OpenSSL for Android cross-compilation
+        echo "OPENSSL_DIR=/usr/local/ssl" >> $GITHUB_ENV
+        echo "OPENSSL_LIB_DIR=/usr/local/ssl/lib" >> $GITHUB_ENV
+        echo "OPENSSL_INCLUDE_DIR=/usr/local/ssl/include" >> $GITHUB_ENV
+        
+    - name: Install OpenSSL for Android
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libssl-dev pkg-config
         
     - name: Build Android APK
       run: |
