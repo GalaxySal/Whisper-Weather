@@ -13,11 +13,35 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
+      changelog: ${{ steps.changelog.outputs.changelog }}
       
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
       
+    - name: Generate changelog
+      id: changelog
+      run: |
+        # Son tag'i bul
+        LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+        
+        if [ -z "$LAST_TAG" ]; then
+          # İlk release ise tüm commit'leri al
+          CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges)
+        else
+          # Son tag'den bu yana olan commit'leri al
+          CHANGELOG=$(git log $LAST_TAG..HEAD --pretty=format:"- %s (%h)" --no-merges)
+        fi
+        
+        if [ -z "$CHANGELOG" ]; then
+          CHANGELOG="- Initial release"
+        fi
+        
+        # Changelog'i output olarak ayarla
+        echo "changelog<<EOF" >> $GITHUB_OUTPUT
+        echo "$CHANGELOG" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+        
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
@@ -26,10 +50,7 @@ jobs:
       with:
         tag_name: ${{ github.ref }}
         release_name: 'Whisper Weather ${{ github.ref }}'
-        body: |
-          ## Changes in ${{ github.ref }}
-          - Automated release from GitHub Actions
-          - Multi-platform builds included
+        body: ${{ steps.changelog.outputs.changelog }}
         draft: false
         prerelease: false
 
@@ -96,7 +117,7 @@ jobs:
       with:
         tag_name: ${{ github.ref_name }}
         name: 'Whisper Weather ${{ github.ref_name }}'
-        body: 'See the assets to download and install this version.'
+        body: ${{ needs.create-release.outputs.changelog }}
         draft: false
         prerelease: false
         files: |

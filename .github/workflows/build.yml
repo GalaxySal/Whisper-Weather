@@ -5,8 +5,6 @@ on:
     branches: [ dev ]
   pull_request:
     branches: [ dev ]
-  release:
-    types: [ published ]
 
 permissions:
   contents: write
@@ -51,42 +49,11 @@ jobs:
       timeout-minutes: 20
       continue-on-error: false
       
-    - name: Generate changelog
-      id: changelog
-      run: |
-        # Son tag'i bul
-        LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-        
-        if [ -z "$LAST_TAG" ]; then
-          # İlk release ise tüm commit'leri al
-          CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges)
-        else
-          # Son tag'den bu yana olan commit'leri al
-          CHANGELOG=$(git log $LAST_TAG..HEAD --pretty=format:"- %s (%h)" --no-merges)
-        fi
-        
-        if [ -z "$CHANGELOG" ]; then
-          CHANGELOG="- Initial release"
-        fi
-        
-        # Changelog'i output olarak ayarla
-        echo "changelog<<EOF" >> $GITHUB_OUTPUT
-        echo "$CHANGELOG" >> $GITHUB_OUTPUT
-        echo "EOF" >> $GITHUB_OUTPUT
-        
     - name: Build the app
-      uses: tauri-apps/tauri-action@v0
+      run: |
+        echo "Building app for testing..."
+        npm run tauri build
       timeout-minutes: ${{ matrix.platform == 'windows-latest' && 120 || matrix.platform == 'macos-latest' && 120 || 20 }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        NODE_VERSION: 20.19.0
-      with:
-        tagName: ${{ github.ref_name }}
-        releaseName: 'Whisper Weather ${{ github.ref_name }}'
-        releaseBody: ${{ steps.changelog.outputs.changelog }}
-        releaseDraft: false
-        prerelease: false
-        includeDebug: false
         
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
