@@ -7,7 +7,7 @@ import { useState } from 'react'
 import PlacesAutocomplete from './PlacesAutocomplete'
 import { Button } from '@/components/ui/button'
 
-export default function Settings({ user }: { user: any }) {
+export default function Settings() {
   const { theme, setTheme } = useTheme()
   const { language, setLanguage } = useLanguage()
   const { favorites, addFavorite, removeFavorite } = useFavorites()
@@ -29,8 +29,7 @@ export default function Settings({ user }: { user: any }) {
   }
 
   const getUserId = () => {
-    if (!user) return '***'
-    return user.id || '***'
+    return '****-****-****-****'
   }
 
   return (
@@ -70,7 +69,7 @@ export default function Settings({ user }: { user: any }) {
               <div className="flex items-center justify-between">
                 <span className="text-white/80">E-posta</span>
                 <span className="text-sm text-white/60">
-                  {user?.email?.substring(0, 3)}***{user?.email?.split('@')[1]?.substring(0, 3) || '***'}
+                  gue***@wea***
                 </span>
               </div>
               <div className="flex items-center justify-between">

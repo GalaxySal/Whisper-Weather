@@ -16,38 +16,33 @@ interface ProfileData {
   website: string
 }
 
-export default function Profile({ user }: { user: any }) {
+export default function Profile() {
   const { language } = useLanguage()
   const t = translations[language]
   const { isTauri } = useTauri()
   const [isEditing, setIsEditing] = useState(false)
   const [profileData, setProfileData] = useState<ProfileData>({
-    display_name: user.user_metadata?.display_name || '',
-    bio: user.user_metadata?.bio || '',
-    location: user.user_metadata?.location || '',
-    website: user.user_metadata?.website || ''
+    display_name: 'Guest User',
+    bio: 'Weather enthusiast',
+    location: 'Istanbul',
+    website: ''
   })
-  const [avatarUrl, setAvatarUrl] = useState<string>(
-    user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${user.email?.charAt(0).toUpperCase()}&background=6366f1&color=fff`
-  )
+  const [avatarUrl, setAvatarUrl] = useState<string>(`https://ui-avatars.com/api/?name=GU&background=6366f1&color=fff`)
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleSave = async () => {
     try {
-      const { error } = await supabase.auth.updateUser({
-        data: {
-          ...profileData,
-          avatar_url: avatarUrl
-        }
-      })
-
-      if (error) throw error
+      // Local storage'a kaydet
+      localStorage.setItem('user-profile', JSON.stringify({
+        ...profileData,
+        avatar_url: avatarUrl
+      }))
 
       setIsEditing(false)
-      toast.success(t.profile.profileUpdated)
+      toast.success('Profil güncellendi')
     } catch (error) {
-      toast.error(t.profile.errorOccurred)
+      toast.error('Hata oluştu')
     }
   }
 
@@ -73,15 +68,21 @@ export default function Profile({ user }: { user: any }) {
       if (isTauri) {
         // Tauri'de dosyayı base64'e çevir
         const base64 = await fileToBase64(file)
-        const fileName = `avatar-${user.id}-${Date.now()}.${file.type.split('/')[1]}`
+        const fileName = `avatar-guest-${Date.now()}.${file.type.split('/')[1]}`
         
-        // Supabase Storage'a yükle
         const { error } = await supabase.storage
           .from('avatars')
           .upload(fileName, base64, {
             contentType: file.type,
             upsert: true
           })
+
+        if (error) {
+          // Supabase yoksa base64 olarak kullan
+          setAvatarUrl(base64)
+          setIsUploading(false)
+          return
+        }
 
         if (error) throw error
 
@@ -94,7 +95,7 @@ export default function Profile({ user }: { user: any }) {
         toast.success('Profil resmi güncellendi')
       } else {
         // Web'de doğrudan yükle
-        const fileName = `avatar-${user.id}-${Date.now()}`
+        const fileName = `avatar-guest-${Date.now()}`
         
         const { error } = await supabase.storage
           .from('avatars')
@@ -142,10 +143,10 @@ export default function Profile({ user }: { user: any }) {
 
   const handleCancel = () => {
     setProfileData({
-      display_name: user.user_metadata?.display_name || '',
-      bio: user.user_metadata?.bio || '',
-      location: user.user_metadata?.location || '',
-      website: user.user_metadata?.website || ''
+      display_name: 'Guest User',
+      bio: 'Weather enthusiast',
+      location: 'Istanbul',
+      website: ''
     })
     setIsEditing(false)
   }
@@ -202,7 +203,7 @@ export default function Profile({ user }: { user: any }) {
                   alt="Profile Avatar"
                   className="w-24 h-24 rounded-full object-cover border-4 border-white/20"
                   onError={(e) => {
-                    e.currentTarget.src = `https://ui-avatars.com/api/?name=${user.email?.charAt(0).toUpperCase()}&background=6366f1&color=fff`
+                    e.currentTarget.src = `https://ui-avatars.com/api/?name=GU&background=6366f1&color=fff`
                   }}
                 />
                 {isEditing && (
@@ -332,17 +333,17 @@ export default function Profile({ user }: { user: any }) {
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-white/80">{t.profile.email}:</span>
-                <span className="font-medium">{user.email}</span>
+                <span className="font-medium">guest@weather.app</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-white/80">{t.profile.memberSince}:</span>
                 <span className="font-medium">
-                  {new Date(user.created_at).toLocaleDateString(language === 'tr' ? 'tr-TR' : 'en-US')}
+                  {new Date().toLocaleDateString(language === 'tr' ? 'tr-TR' : 'en-US')}
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-white/80">ID:</span>
-                <span className="font-medium text-sm">{user.id}</span>
+                <span className="font-medium text-sm">guest-user</span>
               </div>
             </div>
           </div>

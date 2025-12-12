@@ -1,8 +1,6 @@
-import { Moon, Sun, Monitor, Cloud, Languages, LogOut, Home, User, Settings, Info, Cpu, Globe, Bug, Shield } from 'lucide-react'
+import { Moon, Sun, Monitor, Cloud, Languages, Home, User, Settings, Info, Cpu, Globe, Bug, BarChart3, Zap } from 'lucide-react'
 import { useTheme } from '@/hooks/use-theme'
 import { useLanguage } from '@/hooks/use-language'
-import { useState, useEffect, useCallback } from 'react'
-import { supabase } from '@/lib/supabase'
 import { translations } from '@/lib/translations'
 import { TunnelStatus } from '@/components/TunnelStatus'
 import { isTauri } from '@/lib/platform'
@@ -21,40 +19,14 @@ import {
 } from '@/components/ui/sidebar'
 
 interface AppSidebarProps {
-  user: any
   currentPage: string
   onPageChange: (page: string) => void
 }
 
-export default function AppSidebar({ user, currentPage, onPageChange }: AppSidebarProps) {
+export default function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
   const { theme, setTheme } = useTheme()
   const { language, setLanguage } = useLanguage()
   const t = translations[language]
-  const [isAdmin, setIsAdmin] = useState(false)
-
-  const checkAdminAccess = useCallback(async () => {
-    if (!user) {
-      setIsAdmin(false)
-      return
-    }
-
-    // Admin email kontrolü
-    const adminEmails = ['admin@zentaira.com', 'developer@zentaira.com', 'support@zentaira.com', 'nazimpala5170@gmail.com']
-    const isAdminUser = adminEmails.includes(user.email || '') || 
-                      user.user_metadata?.role === 'admin' ||
-                      user.user_metadata?.role === 'developer'
-
-    setIsAdmin(isAdminUser)
-  }, [user])
-
-  // Admin kontrolü
-  useEffect(() => {
-    checkAdminAccess()
-  }, [checkAdminAccess])
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-  }
 
   return (
     <Sidebar collapsible="icon" variant="inset">
@@ -67,9 +39,9 @@ export default function AppSidebar({ user, currentPage, onPageChange }: AppSideb
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">
-                  {user.user_metadata?.display_name || user.email?.split('@')[0] || 'User'}
+                  {t.navigation.home}
                 </span>
-                <span className="truncate text-xs">{user.email}</span>
+                <span className="truncate text-xs">Whisper Weather</span>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -138,17 +110,15 @@ export default function AppSidebar({ user, currentPage, onPageChange }: AppSideb
                   <span>Zentaira</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              {isAdmin && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton 
-                    isActive={currentPage === 'admin'}
-                    onClick={() => onPageChange('admin')}
-                  >
-                    <Shield />
-                    <span>{t.command.adminPanel || 'Admin Panel'}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )}
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  isActive={currentPage === 'explorer'}
+                  onClick={() => onPageChange('explorer')}
+                >
+                  <BarChart3 />
+                  <span>Weather Explorer</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton 
                   isActive={currentPage === 'bugreport'}
@@ -156,6 +126,15 @@ export default function AppSidebar({ user, currentPage, onPageChange }: AppSideb
                 >
                   <Bug />
                   <span>{t.command.bugReport}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  isActive={currentPage === 'updates'}
+                  onClick={() => onPageChange('updates')}
+                >
+                  <Zap />
+                  <span>Updates</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -242,12 +221,6 @@ export default function AppSidebar({ user, currentPage, onPageChange }: AppSideb
               </div>
             </SidebarMenuItem>
           )}
-          <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleLogout}>
-              <LogOut />
-              <span>{t.navigation.logout}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
