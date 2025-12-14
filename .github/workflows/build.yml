@@ -111,7 +111,14 @@ jobs:
           export OPENSSL_NO_VENDOR=0
           export OPENSSL_STATIC=1
           export OPENSSL_DIR=/c/openssl
-          echo "Configuring Windows build with vendored OpenSSL"
+          # Target-specific OpenSSL settings for Windows builds
+          export X86_64_PC_WINDOWS_MSVC_OPENSSL_NO_VENDOR=0
+          export X86_64_PC_WINDOWS_MSVC_OPENSSL_STATIC=1
+          export I686_PC_WINDOWS_MSVC_OPENSSL_NO_VENDOR=0
+          export I686_PC_WINDOWS_MSVC_OPENSSL_STATIC=1
+          export AARCH64_PC_WINDOWS_MSVC_OPENSSL_NO_VENDOR=0
+          export AARCH64_PC_WINDOWS_MSVC_OPENSSL_STATIC=1
+          echo "Configuring Windows build with vendored OpenSSL for all targets"
         elif [[ "${{ matrix.platform }}" == "macos-latest" ]]; then
           export OPENSSL_NO_VENDOR=0
           export OPENSSL_STATIC=1
