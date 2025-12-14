@@ -350,6 +350,10 @@ jobs:
         echo "127.0.0.1:1430" | sudo tee "$SERVER_ADDR_FILE" > /dev/null
         echo "Created server address file at: $SERVER_ADDR_FILE"
         
+        # Disable dev server for CI builds to prevent WebSocket connection issues
+        export TAURI_CLI_NO_DEV_SERVER=1
+        echo "Disabled Tauri dev server for CI build"
+        
         cargo tauri ios init
         
         # Try to list available simulators (may fail, continue anyway)
