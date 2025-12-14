@@ -106,14 +106,33 @@ jobs:
           export CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++
           export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
         fi
+        # For all platforms, use vendored OpenSSL to avoid compilation issues
+        if [[ "${{ matrix.platform }}" == "windows-latest" ]]; then
+          export OPENSSL_NO_VENDOR=0
+          export OPENSSL_STATIC=1
+          export OPENSSL_DIR=/c/openssl
+          echo "Configuring Windows build with vendored OpenSSL"
+        elif [[ "${{ matrix.platform }}" == "macos-latest" ]]; then
+          export OPENSSL_NO_VENDOR=0
+          export OPENSSL_STATIC=1
+          echo "Configuring macOS build with vendored OpenSSL"
+        elif [[ "${{ matrix.platform }}" == "ubuntu-latest" ]]; then
+          export OPENSSL_NO_VENDOR=0
+          export OPENSSL_STATIC=1
+          echo "Configuring Linux build with vendored OpenSSL"
+        fi
         # For iOS simulator build, ensure proper environment
         if [[ "${{ matrix.platform }}" == "macos-latest" && "${{ matrix.target }}" == "aarch64-apple-ios" ]]; then
           export TAURI_SKIP_DEVSERVER=true
           export TAURI_DEVSERVER_ADDRESS=127.0.0.1:1430
           export TAURI_OPTIONS_SERVER_ADDR=127.0.0.1:1430
-          # Create the server address file that Tauri CLI expects
-          mkdir -p /var/folders/bp/kmfmhnl95kx1c8x321z7twbw0000gn/T/
-          echo "127.0.0.1:1430" > /var/folders/bp/kmfmhnl95kx1c8x321z7twbw0000gn/T/com.zentaria.whisper-weather-server-addr
+          # Create the server address file that Tauri CLI expects using proper temp directory
+          TEMP_DIR=$(mktemp -d)
+          SERVER_ADDR_FILE="$TEMP_DIR/com.zentaria.whisper-weather-server-addr"
+          echo "127.0.0.1:1430" > "$SERVER_ADDR_FILE"
+          echo "Created server address file: $SERVER_ADDR_FILE"
+          # Set the environment variable to point to the correct file
+          export TAURI_SERVER_ADDR_FILE="$SERVER_ADDR_FILE"
         fi
         npm run tauri build -- --target ${{ matrix.target }}
       shell: bash
@@ -318,12 +337,12 @@ jobs:
         echo "Attempting to list available iOS Simulators..."
         xcrun simctl list devices available || echo "Could not list simulators, continuing with build..."
         
-        # Build for iOS Simulator without code signing using generic destination
+        # Build for iOS Simulator without code signing using specific simulator
         xcodebuild -project gen/apple/whisper-weather-app.xcodeproj \
                    -scheme whisper-weather-app_iOS \
                    -sdk iphonesimulator \
                    -configuration Debug \
-                   -destination 'generic/platform=iOS Simulator' \
+                   -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.4' \
                    CODE_SIGNING_ALLOWED=NO \
                    CODE_SIGN_IDENTITY="" \
                    CODE_SIGN_ENTITLEMENTS="" \
@@ -333,7 +352,17 @@ jobs:
                    -scheme whisper-weather-app_iOS \
                    -sdk iphonesimulator \
                    -configuration Debug \
-                   -destination 'platform=iOS Simulator,name=Any iOS Simulator Device' \
+                   -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5' \
+                   CODE_SIGNING_ALLOWED=NO \
+                   CODE_SIGN_IDENTITY="" \
+                   CODE_SIGN_ENTITLEMENTS="" \
+                   AD_HOC_CODE_SIGNING_ALLOWED=NO \
+                   build || \
+        xcodebuild -project gen/apple/whisper-weather-app.xcodeproj \
+                   -scheme whisper-weather-app_iOS \
+                   -sdk iphonesimulator \
+                   -configuration Debug \
+                   -destination 'platform=iOS Simulator,name=iPhone 16 Pro,OS=18.4' \
                    CODE_SIGNING_ALLOWED=NO \
                    CODE_SIGN_IDENTITY="" \
                    CODE_SIGN_ENTITLEMENTS="" \
