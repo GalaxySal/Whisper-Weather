@@ -16,7 +16,28 @@ jobs:
   build:
     strategy:
       matrix:
-        platform: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - platform: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            arch: x64
+          - platform: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            arch: arm64
+          - platform: windows-latest
+            target: x86_64-pc-windows-msvc
+            arch: x64
+          - platform: windows-latest
+            target: aarch64-pc-windows-msvc
+            arch: arm64
+          - platform: windows-latest
+            target: i686-pc-windows-msvc
+            arch: x86
+          - platform: macos-latest
+            target: x86_64-apple-darwin
+            arch: x64
+          - platform: macos-latest
+            target: aarch64-apple-darwin
+            arch: arm64
         
     runs-on: ${{ matrix.platform }}
     
@@ -32,6 +53,8 @@ jobs:
         
     - name: Rust setup
       uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: ${{ matrix.target }}
       
     - name: Rust cache
       uses: swatinem/rust-cache@v2
@@ -51,18 +74,18 @@ jobs:
       
     - name: Build the app
       run: |
-        echo "Building app for testing..."
-        npm run tauri build
+        echo "Building app for ${{ matrix.target }}..."
+        npm run tauri build -- --target ${{ matrix.target }}
       timeout-minutes: ${{ matrix.platform == 'windows-latest' && 120 || matrix.platform == 'macos-latest' && 120 || 20 }}
         
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: whisper-weather-${{ matrix.platform }}
+        name: whisper-weather-${{ matrix.platform }}-${{ matrix.arch }}
         path: |
-          src-tauri/target/release/bundle/
-          !src-tauri/target/release/bundle/**/*.deb
-          !src-tauri/target/release/bundle/**/*.rpm
+          src-tauri/target/${{ matrix.target }}/release/bundle/
+          !src-tauri/target/${{ matrix.target }}/release/bundle/**/*.deb
+          !src-tauri/target/${{ matrix.target }}/release/bundle/**/*.rpm
         retention-days: 30
 
   test:
@@ -166,6 +189,10 @@ jobs:
         NDK_VERSION=$(ls -1 $ANDROID_HOME/ndk | head -1)
         echo "NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSION" >> $GITHUB_ENV
         echo "NDK_VERSION=$NDK_VERSION" >> $GITHUB_ENV
+        echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSION" >> $GITHUB_ENV
+        echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/$NDK_VERSION" >> $GITHUB_ENV
+        # Add Android NDK toolchain to PATH
+        echo "$ANDROID_HOME/ndk/$NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin" >> $GITHUB_PATH
         
     - name: Install OpenSSL for Android
       run: |
@@ -175,6 +202,14 @@ jobs:
     - name: Build Android APK
       run: |
         cd src-tauri
+        # Set environment variables for Android cross-compilation
+        export AR_aarch64_linux_android=llvm-ar
+        export RANLIB_aarch64_linux_android=llvm-ranlib
+        export CC_aarch64_linux_android=aarch64-linux-android24-clang
+        export CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=aarch64-linux-android24-clang
+        export OPENSSL_STATIC=1
+        export OPENSSL_DIR=/usr/local/ssl
+        export PKG_CONFIG_ALLOW_CROSS=1
         cargo tauri android init
         cargo tauri android build
       timeout-minutes: 60
@@ -237,12 +272,17 @@ jobs:
       run: |
         cd src-tauri
         cargo tauri ios init
-        # Build for iOS Simulator without code signing
+        
+        # List available simulators
+        echo "Available iOS Simulators:"
+        xcrun simctl list devices available | grep "iOS" | grep "iPhone"
+        
+        # Build for iOS Simulator without code signing using any available iPhone simulator
         xcodebuild -project gen/apple/whisper-weather-app.xcodeproj \
                    -scheme whisper-weather-app_iOS \
                    -sdk iphonesimulator \
                    -configuration Debug \
-                   -destination 'platform=iOS Simulator,name=iPhone 16' \
+                   -destination 'platform=iOS Simulator,name=Any iOS Simulator Device' \
                    CODE_SIGNING_ALLOWED=NO \
                    CODE_SIGN_IDENTITY="" \
                    CODE_SIGN_ENTITLEMENTS="" \
@@ -257,3 +297,50 @@ jobs:
         path: |
           src-tauri/target/*/ios/build/Build/Products/Debug-iphoneos/*.app
         retention-days: 30
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+      
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Rust setup
+      uses: dtolnay/rust-toolchain@stable
+      
+    - name: Install cargo-audit
+      run: cargo install cargo-audit
+      
+    - name: Security audit (Rust)
+      run: cargo audit
+      working-directory: src-tauri
+      
+    - name: Node.js setup
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.19.0'
+        cache: 'npm'
+        
+    - name: Install frontend dependencies
+      run: npm ci
+      
+    - name: Security audit (Node.js)
+      run: npm audit --audit-level=moderate
+      
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: javascript, typescript, rust
+        
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v3
+      
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:javascript"
