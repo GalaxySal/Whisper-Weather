@@ -45,7 +45,10 @@ once_cell = "1.19"
 openssl-sys = { version = "0.9", features = ["vendored"], default-features = false }
 
 [target.'cfg(target_os = "ios")'.dependencies]
-# iOS uses native TLS, no OpenSSL needed
+# iOS uses native TLS, no OpenSSL needed at all
+
+[target.'cfg(target_os = "linux")'.dependencies]
+# Linux uses native system OpenSSL, no compilation needed
 openssl-sys = { version = "0.9", features = [], default-features = false, optional = true }
 
 [target.'cfg(all(target_arch = "aarch64", target_os = "windows"))'.dependencies]
