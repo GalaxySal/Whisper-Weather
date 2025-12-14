@@ -32,7 +32,7 @@ serde_json = "1"
 sysinfo = "0.30"
 dirs = "5"
 notify = "6.0"
-reqwest = { version = "0.11", features = ["json"] }
+reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
 urlencoding = "2.1"
 tokio = { version = "1", features = ["full"] }
 supabase_rs = { version = "0.5.0", features = ["rustls"] }
@@ -47,6 +47,10 @@ openssl-sys = { version = "0.9", features = ["vendored"], default-features = fal
 
 [target.'cfg(target_arch = "aarch64")'.dependencies]
 openssl-sys = { version = "0.9", features = ["vendored"], default-features = false }
+
+[target.'cfg(all(target_arch = "aarch64", target_os = "windows"))'.dependencies]
+# Disable OpenSSL for Windows ARM64 to avoid compilation issues
+reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
 
 [[bin]]
 name = "whisper-weather"
