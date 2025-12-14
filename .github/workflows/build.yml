@@ -175,6 +175,12 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y libssl-dev pkg-config
+        # Install OpenSSL headers for cross-compilation
+        sudo apt-get install -y libssl-dev zlib1g-dev
+        # Set OpenSSL environment variables for cross-compilation
+        echo "OPENSSL_DIR=/usr" >> $GITHUB_ENV
+        echo "OPENSSL_LIB_DIR=/usr/lib/x86_64-linux-gnu" >> $GITHUB_ENV
+        echo "OPENSSL_INCLUDE_DIR=/usr/include/openssl" >> $GITHUB_ENV
         
     - name: Build Android APK
       run: |
@@ -246,7 +252,7 @@ jobs:
                    -scheme whisper-weather-app_iOS \
                    -sdk iphonesimulator \
                    -configuration Debug \
-                   -destination 'platform=iOS Simulator,name=iPhone 15' \
+                   -destination 'platform=iOS Simulator,name=iPhone 16' \
                    build
       timeout-minutes: 90
         
