@@ -1,0 +1,91 @@
+name: Create Dev Branch Tag
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 1.0.4)'
+        required: true
+        type: string
+
+jobs:
+  create-dev-branch-tag:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Check if dev branch exists
+      id: check_dev_branch
+      run: |
+        # Check if dev branch exists
+        if git rev-parse --verify dev >/dev/null 2>&1; then
+          echo "dev_branch_exists=true" >> $GITHUB_OUTPUT
+          echo "Dev branch already exists - skipping tag creation"
+        else
+          echo "dev_branch_exists=false" >> $GITHUB_OUTPUT
+          echo "Dev branch does not exist"
+        fi
+        
+    - name: Get current version
+      id: version
+      if: steps.check_dev_branch.outputs.dev_branch_exists == 'false'
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          VERSION="${{ github.event.inputs.version }}"
+        else
+          # Cargo.toml'dan versiyonu oku
+          VERSION=$(grep '^version' src-tauri/Cargo.toml | head -1 | sed 's/version = "//' | sed 's/"//')
+        fi
+        
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Detected version: $VERSION"
+        
+    - name: Check if dev branch tag exists
+      id: check_dev_tag
+      if: steps.check_dev_branch.outputs.dev_branch_exists == 'false'
+      run: |
+        DEV_VERSION="v${{ steps.version.outputs.version }}"
+        RELEASE_VERSION="v${{ steps.version.outputs.version }}"
+        
+        # Check dev branch tag
+        if git rev-parse "$DEV_VERSION" >/dev/null 2>&1; then
+          echo "dev_exists=true" >> $GITHUB_OUTPUT
+          echo "Dev branch tag $DEV_VERSION already exists"
+        else
+          echo "dev_exists=false" >> $GITHUB_OUTPUT
+          echo "Dev branch tag $DEV_VERSION does not exist"
+        fi
+        
+        # Check if release tag exists (prevent dev branch tag if release exists)
+        if git rev-parse "$RELEASE_VERSION" >/dev/null 2>&1; then
+          echo "release_exists=true" >> $GITHUB_OUTPUT
+          echo "Release tag $RELEASE_VERSION already exists - skipping dev branch tag"
+        else
+          echo "release_exists=false" >> $GITHUB_OUTPUT
+          echo "Release tag $RELEASE_VERSION does not exist"
+        fi
+        
+    - name: Create and push dev branch tag
+      if: steps.check_dev_branch.outputs.dev_branch_exists == 'false' && steps.check_dev_tag.outputs.dev_exists == 'false' && steps.check_dev_tag.outputs.release_exists == 'false'
+      run: |
+        DEV_VERSION="v${{ steps.version.outputs.version }}"
+        
+        # Configure git
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        # Create dev branch tag
+        git tag -a "$DEV_VERSION" -m "Dev branch build ${{ steps.version.outputs.version }}"
+        
+        # Push dev branch tag
+        git push origin "$DEV_VERSION"
+        
+        echo "Created and pushed dev branch tag: $DEV_VERSION"

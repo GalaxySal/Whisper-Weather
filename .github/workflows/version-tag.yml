@@ -1,0 +1,73 @@
+name: Create Version Tag
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 1.0.4)'
+        required: true
+        type: string
+
+jobs:
+  create-tag:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Get current version
+      id: version
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          VERSION="${{ github.event.inputs.version }}"
+        else
+          # Cargo.toml'dan versiyonu oku
+          VERSION=$(grep '^version' src-tauri/Cargo.toml | head -1 | sed 's/version = "//' | sed 's/"//')
+        fi
+        
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Detected version: $VERSION"
+        
+    - name: Check if tag exists
+      id: check_tag
+      run: |
+        VERSION="v${{ steps.version.outputs.version }}"
+        
+        # Check release tag
+        if git rev-parse "$VERSION" >/dev/null 2>&1; then
+          echo "release_exists=true" >> $GITHUB_OUTPUT
+          echo "Release tag $VERSION already exists"
+        else
+          echo "release_exists=false" >> $GITHUB_OUTPUT
+          echo "Release tag $VERSION does not exist"
+        fi
+        
+    - name: Create and push tag
+      if: steps.check_tag.outputs.release_exists == 'false'
+      run: |
+        VERSION="v${{ steps.version.outputs.version }}"
+        
+        # Configure git
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        # Create release tag
+        git tag -a "$VERSION" -m "Release $VERSION"
+        
+        # Push tag
+        git push origin "$VERSION"
+        
+        echo "Created and pushed release tag: $VERSION"
+        
+    - name: Trigger release workflow
+      if: steps.check_tag.outputs.release_exists == 'false'
+      uses: peter-evans/repository-dispatch@v2
+      with:
+        event-type: release-triggered
+        client-payload: '{"version": "v${{ steps.version.outputs.version }}"}'
