@@ -376,7 +376,9 @@ jobs:
         xcrun simctl list devices available || echo "Could not list simulators, continuing with build..."
         
         # Build for iOS Simulator without Tauri CLI WebSocket client
-        echo "Building iOS app without Tauri CLI WebSocket phase..."
+        echo "Building iOS app without Tauri CLI WebSocket client..."
+        xcrun simctl list devices available || echo "Could not list simulators, continuing with build..."
+        
         xcodebuild -project gen/apple/whisper-weather-app.xcodeproj \
                    -scheme whisper-weather-app_iOS \
                    -sdk iphonesimulator \
