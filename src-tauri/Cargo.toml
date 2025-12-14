@@ -52,6 +52,14 @@ openssl-sys = { version = "0.9", features = ["vendored"], default-features = fal
 # Disable OpenSSL for Windows ARM64 to avoid compilation issues
 reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
 
+[target.'cfg(all(target_arch = "x86_64", target_os = "windows"))'.dependencies]
+# Disable OpenSSL for Windows x64 to avoid compilation issues
+reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
+
+[target.'cfg(all(target_arch = "x86", target_os = "windows"))'.dependencies]
+# Disable OpenSSL for Windows x86 to avoid compilation issues
+reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
+
 [[bin]]
 name = "whisper-weather"
 path = "src/main.rs"
