@@ -338,6 +338,18 @@ jobs:
     - name: Build iOS app
       run: |
         cd src-tauri
+        
+        # Create server address file in the correct temp directory for Tauri CLI
+        TEMP_DIR="/var/folders/bp/kmfmhnl95kx1c8x321z7twbw0000gn/T"
+        SERVER_ADDR_FILE="$TEMP_DIR/com.zentaria.whisper-weather-server-addr"
+        
+        # Create temp directory if it doesn't exist
+        sudo mkdir -p "$TEMP_DIR"
+        
+        # Create server address file with a dummy address
+        echo "127.0.0.1:1430" | sudo tee "$SERVER_ADDR_FILE" > /dev/null
+        echo "Created server address file at: $SERVER_ADDR_FILE"
+        
         cargo tauri ios init
         
         # Try to list available simulators (may fail, continue anyway)
