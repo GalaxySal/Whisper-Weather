@@ -59,6 +59,7 @@ reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
 [target.'cfg(all(target_arch = "x86", target_os = "windows"))'.dependencies]
 # Disable OpenSSL for Windows x86 to avoid compilation issues
 reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
+openssl-sys = { version = "0.9", features = [], default-features = false, optional = true }
 
 [[bin]]
 name = "whisper-weather"
