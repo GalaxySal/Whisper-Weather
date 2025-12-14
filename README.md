@@ -20,6 +20,7 @@ Modern cross-platform weather application with real-time updates and advanced fe
 
 ### Mobile Platforms
 - **Android**: ![Android](https://img.shields.io/github/actions/workflow/status/GalaxySal/Whisper-Weather/build.yml?branch=dev&label=Android)
+- **iOS**: ![iOS](https://img.shields.io/github/actions/workflow/status/GalaxySal/Whisper-Weather/build.yml?branch=dev&label=iOS)
 
 ### Overall Status
 ![Build Status](https://img.shields.io/github/actions/workflow/status/GalaxySal/Whisper-Weather/build.yml?branch=dev)
