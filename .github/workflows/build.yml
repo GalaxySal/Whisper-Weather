@@ -63,19 +63,8 @@ jobs:
           sudo apt-get update
           # Install cross-compilation tools and libraries
           sudo apt-get install -y --no-install-recommends g++-aarch64-linux-gnu pkg-config libglib2.0-dev:arm64 libgtk-3-dev:arm64
-          # Try to install libpango1.0-dev with different approaches to resolve conflicts
-          # Approach 1: Install without conflicts using --ignore-depends
-          sudo apt-get install -y --no-install-recommends --ignore-depends libpango1.0-dev:arm64 || true
-          # Approach 2: If that fails, try downloading and force installing
-          if ! dpkg -l | grep -q "libpango1.0-dev.*arm64"; then
-            sudo apt-get download libpango1.0-dev:arm64 || true
-            if [ -f /var/cache/apt/archives/libpango1.0-dev_*_arm64.deb ]; then
-              # Remove the conflicting file if it exists
-              sudo rm -f /usr/share/gir-1.0/Pango-1.0.gir || true
-              # Force install the package ignoring file overwrites
-              sudo dpkg -i --force-overwrite /var/cache/apt/archives/libpango1.0-dev_*_arm64.deb || true
-            fi
-          fi
+          # Skip libpango1.0-dev completely due to conflicts, install only required Pango libraries
+          sudo apt-get install -y --no-install-recommends libpango-1.0-0:arm64 libpangocairo-1.0-0:arm64 || true
           # Install webkit separately to avoid conflicts
           sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev:arm64 || true
           # Fix any remaining broken packages
