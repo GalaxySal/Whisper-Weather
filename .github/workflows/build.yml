@@ -66,14 +66,14 @@ jobs:
           # Try to install libpango1.0-dev with different approaches to resolve conflicts
           # Approach 1: Install without conflicts using --ignore-depends
           sudo apt-get install -y --no-install-recommends --ignore-depends libpango1.0-dev:arm64 || true
-          # Approach 2: If that fails, try downloading and installing with dpkg-divert
+          # Approach 2: If that fails, try downloading and force installing
           if ! dpkg -l | grep -q "libpango1.0-dev.*arm64"; then
             sudo apt-get download libpango1.0-dev:arm64 || true
             if [ -f /var/cache/apt/archives/libpango1.0-dev_*_arm64.deb ]; then
-              # Create diversion for conflicting file
-              sudo dpkg-divert --add --rename --divert /usr/share/gir-1.0/Pango-1.0.gir.divert /usr/share/gir-1.0/Pango-1.0.gir || true
-              # Install the package
-              sudo dpkg -i /var/cache/apt/archives/libpango1.0-dev_*_arm64.deb || true
+              # Remove the conflicting file if it exists
+              sudo rm -f /usr/share/gir-1.0/Pango-1.0.gir || true
+              # Force install the package ignoring file overwrites
+              sudo dpkg -i --force-overwrite /var/cache/apt/archives/libpango1.0-dev_*_arm64.deb || true
             fi
           fi
           # Install webkit separately to avoid conflicts
