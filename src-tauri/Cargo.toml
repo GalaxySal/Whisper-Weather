@@ -40,6 +40,7 @@ chrono = "0.4.42"
 dotenvy = "0.15"
 uuid = { version = "1.0", features = ["v4"] }
 once_cell = "1.19"
+openssl-sys = { version = "0.9", features = ["vendored"] }
 
 [[bin]]
 name = "whisper-weather"

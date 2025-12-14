@@ -166,21 +166,11 @@ jobs:
         NDK_VERSION=$(ls -1 $ANDROID_HOME/ndk | head -1)
         echo "NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSION" >> $GITHUB_ENV
         echo "NDK_VERSION=$NDK_VERSION" >> $GITHUB_ENV
-        # OpenSSL for Android cross-compilation - use system paths
-        echo "OPENSSL_DIR=/usr" >> $GITHUB_ENV
-        echo "OPENSSL_LIB_DIR=/usr/lib/x86_64-linux-gnu" >> $GITHUB_ENV
-        echo "OPENSSL_INCLUDE_DIR=/usr/include/openssl" >> $GITHUB_ENV
         
     - name: Install OpenSSL for Android
       run: |
         sudo apt-get update
-        sudo apt-get install -y libssl-dev pkg-config
-        # Install OpenSSL headers for cross-compilation
-        sudo apt-get install -y libssl-dev zlib1g-dev
-        # Set OpenSSL environment variables for cross-compilation
-        echo "OPENSSL_DIR=/usr" >> $GITHUB_ENV
-        echo "OPENSSL_LIB_DIR=/usr/lib/x86_64-linux-gnu" >> $GITHUB_ENV
-        echo "OPENSSL_INCLUDE_DIR=/usr/include/openssl" >> $GITHUB_ENV
+        sudo apt-get install -y pkg-config
         
     - name: Build Android APK
       run: |
@@ -253,6 +243,10 @@ jobs:
                    -sdk iphonesimulator \
                    -configuration Debug \
                    -destination 'platform=iOS Simulator,name=iPhone 16' \
+                   CODE_SIGNING_ALLOWED=NO \
+                   CODE_SIGN_IDENTITY="" \
+                   CODE_SIGN_ENTITLEMENTS="" \
+                   AD_HOC_CODE_SIGNING_ALLOWED=NO \
                    build
       timeout-minutes: 90
         

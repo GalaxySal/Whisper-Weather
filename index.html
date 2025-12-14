@@ -2,13 +2,69 @@
 <html lang="tr">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Whisper Weather</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="description" content="Whisper Weather - Modern Tauri weather application with real-time updates and beautiful UI" />
+    <meta name="keywords" content="weather, forecast, meteorology, climate, hava durumu, tauri, rust, desktop app" />
+    <meta name="author" content="GalaxySal" />
+    <meta name="theme-color" content="#3b82f6" />
     
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://github.com/GalaxySal/Whisper-Weather" />
+    <meta property="og:title" content="Whisper Weather" />
+    <meta property="og:description" content="Modern Tauri weather application with real-time updates and beautiful UI" />
+    <meta property="og:image" content="/vite.svg" />
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://github.com/GalaxySal/Whisper-Weather" />
+    <meta property="twitter:title" content="Whisper Weather" />
+    <meta property="twitter:description" content="Modern Tauri weather application with real-time updates and beautiful UI" />
+    <meta property="twitter:image" content="/vite.svg" />
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="apple-touch-icon" href="/vite.svg" />
+    
+    <!-- Preconnect to external domains -->
+    <link rel="preconnect" href="https://api.openweathermap.org" />
+    
+    <title>Whisper Weather - Modern Weather Application</title>
+    
+    <!-- Prevent FOUC (Flash of Unstyled Content) -->
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+          'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background-color: #f8fafc;
+      }
+      
+      #root {
+        min-height: 100vh;
+      }
+      
+      /* Loading spinner */
+      .loading-spinner {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        font-size: 1.2rem;
+        color: #64748b;
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="loading-spinner">
+        Yükleniyor...
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
