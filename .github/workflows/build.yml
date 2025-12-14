@@ -352,9 +352,19 @@ jobs:
         
         # Disable dev server for CI builds to prevent WebSocket connection issues
         export TAURI_CLI_NO_DEV_SERVER=1
+        export TAURI_BUNDLE_IDENTIFIER="com.zentaria.whisper-weather"
+        export TAURI_CLI_PATH=""
         echo "Disabled Tauri dev server for CI build"
         
+        # Create a mock server address to prevent connection attempts
+        echo "127.0.0.1:1430" > /tmp/mock-server-addr.txt
+        export TAURI_SERVER_ADDR_FILE="/tmp/mock-server-addr.txt"
+        
         cargo tauri ios init
+        
+        # Build the Rust library directly without Tauri CLI WebSocket client
+        echo "Building Rust library for iOS..."
+        cargo build --target aarch64-apple-ios --release
         
         # Try to list available simulators (may fail, continue anyway)
         echo "Attempting to list available iOS Simulators..."
