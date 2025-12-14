@@ -119,6 +119,10 @@ jobs:
         if [[ "${{ matrix.platform }}" == "macos-latest" && "${{ matrix.target }}" == "aarch64-apple-ios" ]]; then
           export TAURI_SKIP_DEVSERVER=true
           export TAURI_DEVSERVER_ADDRESS=127.0.0.1:1430
+          export TAURI_OPTIONS_SERVER_ADDR=127.0.0.1:1430
+          # Create the server address file that Tauri CLI expects
+          mkdir -p /var/folders/bp/kmfmhnl95kx1c8x321z7twbw0000gn/T/
+          echo "127.0.0.1:1430" > /var/folders/bp/kmfmhnl95kx1c8x321z7twbw0000gn/T/com.zentaria.whisper-weather-server-addr
         fi
         npm run tauri build -- --target ${{ matrix.target }}
       shell: bash
