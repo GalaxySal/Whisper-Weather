@@ -228,9 +228,9 @@ jobs:
         echo "127.0.0.1:1430" > /var/folders/bp/kmfmhnl95kx1c8x321z7twbw0000gn/T/com.zentaria.whisper-weather-server-addr
         
         # Modify Xcode project to disable code signing completely
-        cd gen/apple/whisper-weather-app.xcodeproj/project.xcworkspace/xcshareddata/
-        sed -i '' 's/DEVELOPMENT_TEAM = .*/DEVELOPMENT_TEAM = ""/' ../project.pbxproj
-        cd ../../..
+        cd gen/apple/whisper-weather-app.xcodeproj/
+        sed -i '' 's/DEVELOPMENT_TEAM = .*/DEVELOPMENT_TEAM = ""/' project.pbxproj
+        cd ../..
         
         xcodebuild -project gen/apple/whisper-weather-app.xcodeproj \
                    -scheme whisper-weather-app_iOS \
