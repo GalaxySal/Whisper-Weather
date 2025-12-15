@@ -51,33 +51,37 @@ jobs:
         sudo apt-get update -qq
         sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev patchelf
         # Install cross-compilation dependencies for ARM64
+        # Bu, arm64 cross-compiler ve temel pkg-config'i normal yoldan kurar (amd64 deposundan).
+        # Bu komutun security depolarına ihtiyacı olabilir, o yüzden en başta çalıştırıyoruz.
+        sudo apt-get update -qq || true # Başarısız olsa bile devam et
+        sudo apt-get install -y --no-install-recommends \
+          g++-aarch64-linux-gnu \
+          pkg-config \
+          libwebkit2gtk-4.1-dev \
+          patchelf || true # Hata verse bile devam at
+
         if [ "${{ matrix.target }}" = "aarch64-unknown-linux-gnu" ]; then
           # 1. ARM64 mimari desteğini ekle
           sudo dpkg --add-architecture arm64
           
           # 2. KRİTİK TEMİZLİK: security.ubuntu.com adresindeki 404 hatalarını önlemek için
-          
           # A) Mevcut sources.list dosyasındaki tüm security satırlarını yorum satırı yap
           sudo sed -i 's/security.ubuntu.com/#security.ubuntu.com/g' /etc/apt/sources.list
           
-          # B) /etc/apt/sources.list.d/ içindeki tüm .sources dosyalarını da temizle
-          # Bu, Azure mirror'larını veya diğer ek kaynakları da etkisiz hale getirecektir.
+          # B) /etc/apt/sources.list.d/ içindeki tüm .sources dosyalarını temizle
           sudo rm -f /etc/apt/sources.list.d/*.sources
           
           # C) ports.ubuntu.com adresini kullanarak sadece arm64 paketlerini alacağımız güvenilir kaynağı ekle
-          # Bu, Noble'daki (24.04) multiarch sorununu atlatmamızı sağlar.
           printf "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ noble main restricted universe multiverse\n" | sudo tee -a /etc/apt/sources.list
           printf "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ noble-updates main restricted universe multiverse\n" | sudo tee -a /etc/apt/sources.list
 
-          # D) APT'yi tekrar güncelle
+          # D) APT'yi arm64 paketleri için tekrar güncelle
           sudo apt-get update -qq
           
-          # 3. KRİTİK SON ÇARE: Bağımlılıkları çözemeyen apt-get'i atlayıp dpkg ile zorla kurulum
+          # 3. KRİTİK SON ÇARE: SADECE arm64 kütüphanelerini indirme ve zorla kurma
           
-          # Gerekli paketlerin listesi
-          DEPENDENCIES="g++-aarch64-linux-gnu \
-            pkg-config \
-            libglib2.0-dev:arm64 \
+          # Yalnızca arm64 kütüphanelerinin listesi
+          ARM64_LIBS="libglib2.0-dev:arm64 \
             libgtk-3-dev:arm64 \
             libwebkit2gtk-4.1-dev:arm64 \
             libharfbuzz-dev:arm64 \
@@ -85,16 +89,13 @@ jobs:
             libgdk-pixbuf-2.0-dev:arm64 \
             libatk1.0-dev:arm64"
             
-          # Tüm paketleri indir (kurulum yapma)
-          sudo apt-get download $DEPENDENCIES
+          # Sadece arm64 paketlerini indir
+          sudo apt-get download $ARM64_LIBS
           
           # dpkg ile bağımlılık kontrolü yapmadan ZORLA KURULUM
-          # --force-depends: Bağımlılık sorunlarını görmezden gel.
-          # --force-overwrite: Dosya çakışmalarını görmezden gel.
           sudo dpkg -i --force-depends --force-overwrite *.deb || true
           
-          # Hatalı bağımlılıkları temizlemeye çalış (çoğunlukla dpkg hatasından sonra gerekebilir)
-          # Bu, kuruluma zorlanan paketlerin çakışan bağımlılıklarını sistemden kaldırmadan bıraktığımız için gereklidir.
+          # Hatalı bağımlılıkları temizlemeye çalış
           sudo apt-get install -f -y || true
             
           # 4. PKG_CONFIG ayarlarını koru (bu, linker'ın kütüphaneleri bulması için gerekli)
