@@ -84,8 +84,9 @@ jobs:
             libcairo2-dev:arm64 \
             libgdk-pixbuf-2.0-dev:arm64 \
             libatk1.0-dev:arm64 \
-            libpango1.0-dev:arm64 \
-            libpangocairo1.0-dev:arm64
+            libpango1.0-dev:arm64
+            # KALDIRILDI: libpangocairo1.0-dev:arm64 -> Noble'da bulunmuyor
+            # libpangocairo-1.0-0 paketi var ama dev paketi yok
             
           # 4. PKG_CONFIG ayarlarını koru (bu, linker'ın kütüphaneleri bulması için gerekli)
           export PKG_CONFIG_ALLOW_CROSS=1
