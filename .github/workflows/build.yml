@@ -104,19 +104,35 @@ jobs:
           # Hatalı bağımlılıkları temizlemeye çalış
           sudo apt-get install -f -y || true
           
-          # KRİTİK KONTROL: glib-2.0.pc dosyasının gerçekten var olup olmadığını kontrol edin
-          echo "Verifying glib-2.0.pc existence:"
-          GLIB_PC_PATH=$(find / -name "glib-2.0.pc" 2>/dev/null | grep aarch64)
-          if [ -z "$GLIB_PC_PATH" ]; then
-            echo "!! glib-2.0.pc NOT found for aarch64. Manual fix required."
-            # Eğer bulunamazsa, bu, kurulumun başarısız olduğu anlamına gelir.
+          # 4. KRİTİK SON ÇARE: glib-2.0.pc dosyasını manuel kopyala ve düzenle
+          
+          # A) Kaynak dosyayı kopyala (amd64'ten arm64 arama dizinine)
+          # NOT: libglib2.0-dev paketi, x86_64 için kurulmuş olmalıdır.
+          ARM64_PC_DIR="/usr/lib/aarch64-linux-gnu/pkgconfig"
+          AMD64_PC_DIR="/usr/lib/x86_64-linux-gnu/pkgconfig" # Veya /usr/lib/pkgconfig
+          
+          echo "Attempting to manually copy glib-2.0.pc..."
+          
+          # Hedef dizin yoksa oluştur
+          sudo mkdir -p $ARM64_PC_DIR
+          
+          # AMD64 dizininden hedef dizine kopyala
+          if [ -f "$AMD64_PC_DIR/glib-2.0.pc" ]; then
+              sudo cp "$AMD64_PC_DIR/glib-2.0.pc" "$ARM64_PC_DIR/glib-2.0.pc"
           else
-            echo "glib-2.0.pc found at: $GLIB_PC_PATH"
+              # Alternatif yoldan kopyalamayı dene (bazı sistemlerde x86_64 ön eki olmadan kurulur)
+              sudo cp "/usr/lib/pkgconfig/glib-2.0.pc" "$ARM64_PC_DIR/glib-2.0.pc" || true
           fi
-            
-          # 4. PKG_CONFIG ayarları (Genişletilmiş PKG_CONFIG_PATH)
+          
+          # B) Kopyalanan dosyayı ARM64 mimarisine göre düzenle
+          # Dosya içindeki yolların (örneğin Libdir) aarch64'ü işaret etmesi gerekir.
+          sudo sed -i 's/\/lib\/x86_64-linux-gnu\//\/lib\/aarch64-linux-gnu\//g' "$ARM64_PC_DIR/glib-2.0.pc"
+          sudo sed -i 's/\/include\/x86_64-linux-gnu\//\/include\/aarch64-linux-gnu\//g' "$ARM64_PC_DIR/glib-2.0.pc"
+          
+          echo "glib-2.0.pc manually placed and modified."
+
+          # 5. PKG_CONFIG ayarları korunacak
           export PKG_CONFIG_ALLOW_CROSS=1
-          # /usr/lib/aarch64-linux-gnu/ glib-2.0.pc için sık kullanılan bir yoldur.
           export PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig:/usr/lib/aarch64-linux-gnu
           export PKG_CONFIG_SYSROOT_DIR=/
           export PKG_CONFIG_LIBDIR=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/lib/aarch64-linux-gnu
