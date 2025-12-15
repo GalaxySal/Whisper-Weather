@@ -217,7 +217,20 @@ jobs:
         export CODE_SIGN_IDENTITY=""
         export DEVELOPMENT_TEAM=""
         export PROVISIONING_PROFILE=""
-        cargo tauri ios build
+        export CODE_SIGNING_REQUIRED=NO
+        export CODE_SIGN_ENTITLEMENTS=""
+        xcodebuild -project gen/apple/whisper-weather-app.xcodeproj \
+                   -scheme whisper-weather-app_iOS \
+                   -configuration Release \
+                   -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
+                   -allowProvisioningUpdates \
+                   CODE_SIGNING_ALLOWED=NO \
+                   CODE_SIGN_IDENTITY="" \
+                   DEVELOPMENT_TEAM="" \
+                   PROVISIONING_PROFILE="" \
+                   CODE_SIGNING_REQUIRED=NO \
+                   CODE_SIGN_ENTITLEMENTS="" || \
+        cargo tauri ios build --verbose
         
     - name: Upload iOS artifacts
       uses: actions/upload-artifact@v4
