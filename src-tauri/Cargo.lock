@@ -5991,6 +5991,7 @@ dependencies = [
  "chrono",
  "dirs 5.0.1",
  "dotenvy",
+ "hyper-tls 0.5.0",
  "notify",
  "once_cell",
  "openssl-sys",

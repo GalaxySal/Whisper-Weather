@@ -49,10 +49,11 @@ openssl-sys = { version = "0.9", features = ["vendored"], default-features = fal
 
 [target.'cfg(target_os = "linux")'.dependencies]
 # Linux uses rustls to avoid OpenSSL compilation issues
-reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
-supabase_rs = { version = "0.5", features = ["rustls"] }
-tauri-plugin-updater = { version = "2.9", features = ["rustls-tls"] }
+reqwest = { version = "0.11", features = ["json", "rustls-tls"], default-features = false }
+supabase_rs = { version = "0.5", features = ["rustls"], default-features = false }
+tauri-plugin-updater = { version = "2.9", features = ["rustls-tls"], default-features = false }
 tokio-native-tls = { version = "0.3", features = [], default-features = false, optional = true }
+hyper-tls = { version = "0.5", features = [], default-features = false, optional = true }
 
 [target.'cfg(all(target_arch = "aarch64", target_os = "windows"))'.dependencies]
 # Disable OpenSSL for Windows ARM64 to avoid compilation issues
