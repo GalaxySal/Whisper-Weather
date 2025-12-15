@@ -374,15 +374,25 @@ jobs:
         echo "Attempting to list available iOS Simulators..."
         xcrun simctl list devices available || echo "Could not list simulators, continuing with build..."
         
-        # Completely bypass Tauri CLI build script to avoid WebSocket client
-        echo "Building iOS app by bypassing Tauri CLI WebSocket client..."
+        # Completely replace Tauri CLI build script with dummy script
+        echo "Replacing Tauri CLI build script with dummy script..."
         
-        # Find and modify the build script to skip Tauri CLI
+        # Create a dummy build script that does nothing
+        DUMMY_SCRIPT_PATH="gen/apple/whisper-weather-app.xcodeproj/whisper-weather-app_iOS.xcodeproj/scripts/build-rust.sh"
+        mkdir -p "$(dirname "$DUMMY_SCRIPT_PATH")"
+        echo '#!/bin/bash' > "$DUMMY_SCRIPT_PATH"
+        echo 'echo "Dummy build script - Rust library already built"' >> "$DUMMY_SCRIPT_PATH"
+        echo 'echo "Skipping Tauri CLI WebSocket client creation"' >> "$DUMMY_SCRIPT_PATH"
+        echo 'exit 0' >> "$DUMMY_SCRIPT_PATH"
+        chmod +x "$DUMMY_SCRIPT_PATH"
+        
+        # Modify the Xcode project to use our dummy script instead of cargo tauri
         BUILD_SCRIPT_PATH="gen/apple/whisper-weather-app.xcodeproj/whisper-weather-app_iOS.xcodeproj/project.pbxproj"
         if [ -f "$BUILD_SCRIPT_PATH" ]; then
-          echo "Modifying build script to skip Tauri CLI..."
-          # Replace the Tauri CLI build script with a simple copy command
-          sed -i '' 's/cargo tauri ios build/# cargo tauri ios build - DISABLED/g' "$BUILD_SCRIPT_PATH" || echo "Could not modify build script"
+          echo "Replacing Tauri CLI build commands with dummy script..."
+          # Replace all cargo tauri commands with our dummy script
+          sed -i '' 's|cargo tauri ios build|scripts/build-rust.sh|g' "$BUILD_SCRIPT_PATH"
+          sed -i '' 's|cargo tauri.*build|scripts/build-rust.sh|g' "$BUILD_SCRIPT_PATH"
         fi
         
         # Set environment variables to disable any WebSocket connections
@@ -391,6 +401,7 @@ jobs:
         export TAURI_CLI_NO_DEV_SERVER_TIMEOUT=0
         export TAURI_CLI_BUNDLE_IDENTIFIER=com.zentaria.whisper-weather
         export TAURI_CLI_NO_DEV_SERVER_PORT=0
+        export TAURI_CLI_ENVIRONMENT=ci
         
         # Build with xcodebuild directly, avoiding Tauri CLI
         xcodebuild -project gen/apple/whisper-weather-app.xcodeproj \
