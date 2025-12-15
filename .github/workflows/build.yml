@@ -55,15 +55,21 @@ jobs:
           # 1. ARM64 mimari desteğini ekle
           sudo dpkg --add-architecture arm64
           
-          # 2. KRİTİK DÜZELTME: Azure/Security 404 hatalarını atlamak için /etc/apt/sources.list dosyasını düzenle
-          # a. Tüm arm64 satırlarını (özellikle security satırlarını) sources.list'ten kaldırın.
-          sudo sed -i '/arm64/d' /etc/apt/sources.list
+          # 2. KRİTİK TEMİZLİK: security.ubuntu.com adresindeki 404 hatalarını önlemek için
           
-          # b. Ports deposunu ekleyerek arm64 paketlerini alacağımız güvenilir kaynağı tanımlayın.
+          # A) Mevcut sources.list dosyasındaki tüm security satırlarını yorum satırı yap
+          sudo sed -i 's/security.ubuntu.com/#security.ubuntu.com/g' /etc/apt/sources.list
+          
+          # B) /etc/apt/sources.list.d/ içindeki tüm .sources dosyalarını da temizle
+          # Bu, Azure mirror'larını veya diğer ek kaynakları da etkisiz hale getirecektir.
+          sudo rm -f /etc/apt/sources.list.d/*.sources
+          
+          # C) ports.ubuntu.com adresini kullanarak sadece arm64 paketlerini alacağımız güvenilir kaynağı ekle
+          # Bu, Noble'daki (24.04) multiarch sorununu atlatmamızı sağlar.
           printf "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ noble main restricted universe multiverse\n" | sudo tee -a /etc/apt/sources.list
           printf "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ noble-updates main restricted universe multiverse\n" | sudo tee -a /etc/apt/sources.list
-          
-          # c. apt-get update'i tekrar çalıştırın (bu sefer 404 almamalı)
+
+          # D) APT'yi tekrar güncelle
           sudo apt-get update -qq
           
           # 3. Gerekli tüm çapraz derleme araçlarını ve kütüphanelerini yükle
@@ -81,7 +87,7 @@ jobs:
             libpango1.0-dev:arm64 \
             libpangocairo1.0-dev:arm64
             
-          # 4. PKG_CONFIG ayarlarını koru (bu adım zaten önceki çözümde doğruydu)
+          # 4. PKG_CONFIG ayarlarını koru (bu, linker'ın kütüphaneleri bulması için gerekli)
           export PKG_CONFIG_ALLOW_CROSS=1
           export PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig
           export PKG_CONFIG_SYSROOT_DIR=/
