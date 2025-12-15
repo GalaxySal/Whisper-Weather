@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
-use sysinfo::System;
 use std::process::Command;
+use sysinfo::System;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SystemInfo {
@@ -78,11 +78,11 @@ pub async fn get_cpu_usage() -> Result<f32, SystemError> {
 pub async fn get_memory_usage() -> Result<(u64, u64, f32), SystemError> {
     let mut sys = System::new_all();
     sys.refresh_memory();
-    
+
     let total = sys.total_memory();
     let used = sys.used_memory();
     let usage = (used as f64 / total as f64) * 100.0;
-    
+
     Ok((total, used, usage as f32))
 }
 
@@ -99,10 +99,7 @@ async fn get_device_model() -> Option<String> {
         }
     } else if cfg!(target_os = "macos") {
         // Get Mac model
-        if let Ok(output) = Command::new("sysctl")
-            .args(&["-n", "hw.model"])
-            .output()
-        {
+        if let Ok(output) = Command::new("sysctl").args(&["-n", "hw.model"]).output() {
             if let Ok(model) = String::from_utf8(output.stdout) {
                 return Some(model.trim().to_string());
             }
@@ -126,27 +123,19 @@ async fn get_device_model() -> Option<String> {
 
 async fn get_kernel_version() -> Option<String> {
     if cfg!(target_os = "linux") {
-        if let Ok(output) = Command::new("uname")
-            .arg("-r")
-            .output()
-        {
+        if let Ok(output) = Command::new("uname").arg("-r").output() {
             if let Ok(version) = String::from_utf8(output.stdout) {
                 return Some(version.trim().to_string());
             }
         }
     } else if cfg!(target_os = "macos") {
-        if let Ok(output) = Command::new("uname")
-            .arg("-r")
-            .output()
-        {
+        if let Ok(output) = Command::new("uname").arg("-r").output() {
             if let Ok(version) = String::from_utf8(output.stdout) {
                 return Some(version.trim().to_string());
             }
         }
     } else if cfg!(target_os = "windows") {
-        if let Ok(output) = Command::new("ver")
-            .output()
-        {
+        if let Ok(output) = Command::new("ver").output() {
             if let Ok(version) = String::from_utf8(output.stdout) {
                 return Some(version.trim().to_string());
             }

@@ -1,7 +1,7 @@
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
-use reqwest::Client;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TunnelConfig {
@@ -92,13 +92,13 @@ pub async fn check_tunnel_health(
 ) -> Result<TunnelStatus, TunnelError> {
     let config = state.config.read().await;
     let mut status = state.status.write().await;
-    
+
     let start_time = Instant::now();
-    
+
     // Check main domain (zentaira.com)
     let main_domain_url = format!("{}{}", config.main_domain, config.health_check_path);
     let main_domain_status = check_endpoint_health(&state.client, &main_domain_url).await;
-    
+
     // Check fallback URLs
     let mut fallback_status = false;
     for fallback_url in &config.fallback_urls {
@@ -108,9 +108,9 @@ pub async fn check_tunnel_health(
             break;
         }
     }
-    
+
     let response_time = start_time.elapsed().as_millis() as u64;
-    
+
     // Update status
     let new_status = TunnelStatus {
         is_active: main_domain_status || fallback_status,
@@ -129,7 +129,7 @@ pub async fn check_tunnel_health(
             .as_secs(),
         response_time_ms: response_time,
     };
-    
+
     let return_status = TunnelStatus {
         is_active: new_status.is_active,
         current_mode: new_status.current_mode.clone(),
@@ -138,7 +138,7 @@ pub async fn check_tunnel_health(
         last_check: new_status.last_check,
         response_time_ms: new_status.response_time_ms,
     };
-    
+
     *status = new_status;
     Ok(return_status)
 }
@@ -184,7 +184,7 @@ pub async fn switch_tunnel_mode(
 ) -> Result<(), TunnelError> {
     let mut status = state.status.write().await;
     status.current_mode = mode.clone();
-    
+
     match mode {
         TunnelMode::MainDomain => {
             status.is_active = status.main_domain_status;
@@ -196,18 +196,20 @@ pub async fn switch_tunnel_mode(
             status.is_active = true;
         }
     }
-    
+
     Ok(())
 }
 
 async fn check_endpoint_health(client: &Client, url: &str) -> bool {
-    match client.get(url)
+    match client
+        .get(url)
         .timeout(Duration::from_secs(3)) // 5'ten 3'e düşür
         .send()
-        .await {
-            Ok(response) => response.status().is_success(),
-            Err(_) => false,
-        }
+        .await
+    {
+        Ok(response) => response.status().is_success(),
+        Err(_) => false,
+    }
 }
 
 // Get the best available URL for API requests
@@ -215,7 +217,7 @@ async fn check_endpoint_health(client: &Client, url: &str) -> bool {
 pub async fn get_best_api_url(state: &TunnelState) -> String {
     let config = state.config.read().await;
     let status = state.status.read().await;
-    
+
     match status.current_mode {
         TunnelMode::MainDomain => format!("{}{}", config.main_domain, "/api"),
         TunnelMode::Fallback => {

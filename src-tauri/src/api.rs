@@ -1,11 +1,11 @@
-use serde::{Deserialize, Serialize};
-use tauri::State;
-use std::collections::HashMap;
 use crate::auth::AuthState;
+use chrono::{DateTime, Utc};
 use reqwest::Client;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::env;
 use std::sync::{Arc, Mutex};
-use chrono::{DateTime, Utc};
+use tauri::State;
 
 // API Query logging
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -23,7 +23,7 @@ pub struct ApiQuery {
 }
 
 // Global API query store
-pub static API_QUERIES: once_cell::sync::Lazy<Arc<Mutex<Vec<ApiQuery>>>> = 
+pub static API_QUERIES: once_cell::sync::Lazy<Arc<Mutex<Vec<ApiQuery>>>> =
     once_cell::sync::Lazy::new(|| Arc::new(Mutex::new(Vec::new())));
 
 // Log API query for admin dashboard
@@ -187,7 +187,7 @@ pub struct AuthStatusResponse {
 pub async fn get_weather(request: WeatherRequest) -> Result<ApiResponse<WeatherData>, String> {
     let start_time = std::time::Instant::now();
     let endpoint = "/api/weather";
-    
+
     let result = async {
         let api_key = env::var("VITE_OPENWEATHERMAP_API_KEY")
             .or_else(|_| env::var("OPENWEATHERMAP_API_KEY"))
@@ -195,7 +195,7 @@ pub async fn get_weather(request: WeatherRequest) -> Result<ApiResponse<WeatherD
 
         let client = Client::new();
         let units = request.units.unwrap_or_else(|| "metric".to_string());
-        
+
         // First get coordinates using Nominatim (OpenStreetMap)
         let nominatim_url = format!(
             "https://nominatim.openstreetmap.org/search?format=json&q={}&limit=1",
@@ -217,9 +217,15 @@ pub async fn get_weather(request: WeatherRequest) -> Result<ApiResponse<WeatherD
         }
 
         let location = &nominatim_response[0];
-        let lat: f64 = location.lat.parse().map_err(|_| "Invalid latitude".to_string())?;
-        let lon: f64 = location.lon.parse().map_err(|_| "Invalid longitude".to_string())?;
-        
+        let lat: f64 = location
+            .lat
+            .parse()
+            .map_err(|_| "Invalid latitude".to_string())?;
+        let lon: f64 = location
+            .lon
+            .parse()
+            .map_err(|_| "Invalid longitude".to_string())?;
+
         // Get weather data
         let weather_url = format!(
             "https://api.openweathermap.org/data/2.5/weather?lat={}&lon={}&appid={}&units={}",
@@ -238,7 +244,9 @@ pub async fn get_weather(request: WeatherRequest) -> Result<ApiResponse<WeatherD
         let weather_data = WeatherData {
             city: weather_response.name,
             temperature: weather_response.main.temp,
-            condition: weather_response.weather.first()
+            condition: weather_response
+                .weather
+                .first()
                 .map(|w| w.description.clone())
                 .unwrap_or_else(|| "Unknown".to_string()),
             humidity: weather_response.main.humidity,
@@ -246,17 +254,18 @@ pub async fn get_weather(request: WeatherRequest) -> Result<ApiResponse<WeatherD
             feels_like: weather_response.main.feels_like,
             pressure: weather_response.main.pressure,
             visibility: 10000.0, // OpenWeather doesn't always provide this
-            uv_index: 0.0, // Would need separate API call for UV index
+            uv_index: 0.0,       // Would need separate API call for UV index
             sunrise: weather_response.sys.sunrise,
             sunset: weather_response.sys.sunset,
             timestamp: weather_response.dt,
         };
 
         Ok(ApiResponse::success(weather_data))
-    }.await;
+    }
+    .await;
 
     let response_time = start_time.elapsed().as_millis() as u64;
-    
+
     // Log the API call
     match &result {
         Ok(_) => log_api_query(endpoint, "POST", 200, response_time, None, None),
@@ -269,7 +278,7 @@ pub async fn get_weather(request: WeatherRequest) -> Result<ApiResponse<WeatherD
 #[tauri::command]
 pub async fn search_weather_cities(query: String) -> Result<ApiResponse<Vec<String>>, String> {
     let client = Client::new();
-    
+
     // Search for cities using Nominatim (OpenStreetMap)
     let nominatim_url = format!(
         "https://nominatim.openstreetmap.org/search?format=json&q={}&limit=5",
@@ -296,7 +305,9 @@ pub async fn search_weather_cities(query: String) -> Result<ApiResponse<Vec<Stri
 
 // Auth API endpoints
 #[tauri::command]
-pub async fn check_auth_status(_auth_state: State<'_, AuthState>) -> Result<ApiResponse<AuthStatusResponse>, String> {
+pub async fn check_auth_status(
+    _auth_state: State<'_, AuthState>,
+) -> Result<ApiResponse<AuthStatusResponse>, String> {
     // Check if user is authenticated
     let response = AuthStatusResponse {
         authenticated: false, // In real app, check actual auth state
@@ -308,7 +319,9 @@ pub async fn check_auth_status(_auth_state: State<'_, AuthState>) -> Result<ApiR
 }
 
 #[tauri::command]
-pub async fn refresh_session(_auth_state: State<'_, AuthState>) -> Result<ApiResponse<String>, String> {
+pub async fn refresh_session(
+    _auth_state: State<'_, AuthState>,
+) -> Result<ApiResponse<String>, String> {
     // Refresh authentication session
     Ok(ApiResponse::success("Session refreshed".to_string()))
 }
@@ -319,30 +332,33 @@ pub async fn get_api_queries() -> Result<ApiResponse<Vec<ApiQuery>>, String> {
     if let Ok(queries) = API_QUERIES.lock() {
         let mut sorted_queries = queries.clone();
         sorted_queries.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
-        
+
         // Convert timestamp to string for JSON serialization
         let mut serialized_queries = Vec::new();
         for query in sorted_queries {
             let mut json_query = serde_json::to_value(&query).unwrap_or_default();
-            
+
             // Convert timestamp to string
             if let Some(obj) = json_query.as_object_mut() {
                 if let Some(timestamp) = obj.get("timestamp") {
                     if let Some(ts_str) = timestamp.as_str() {
-                        obj.insert("timestamp".to_string(), serde_json::Value::String(ts_str.to_string()));
+                        obj.insert(
+                            "timestamp".to_string(),
+                            serde_json::Value::String(ts_str.to_string()),
+                        );
                     }
                 }
             }
-            
+
             serialized_queries.push(json_query);
         }
-        
+
         // Convert back to ApiQuery objects
         let final_queries: Vec<ApiQuery> = serialized_queries
             .into_iter()
             .filter_map(|v| serde_json::from_value(v).ok())
             .collect();
-        
+
         Ok(ApiResponse::success(final_queries))
     } else {
         Ok(ApiResponse::success(Vec::new()))
@@ -353,17 +369,30 @@ pub async fn get_api_queries() -> Result<ApiResponse<Vec<ApiQuery>>, String> {
 #[tauri::command]
 pub async fn api_health_check() -> Result<ApiResponse<HashMap<String, String>>, String> {
     let start_time = std::time::Instant::now();
-    
+
     let mut health_data = HashMap::new();
     health_data.insert("status".to_string(), "healthy".to_string());
-    health_data.insert("timestamp".to_string(), chrono::Utc::now().to_rfc3339().to_string());
+    health_data.insert(
+        "timestamp".to_string(),
+        chrono::Utc::now().to_rfc3339().to_string(),
+    );
     health_data.insert("version".to_string(), "1.0.0".to_string());
     health_data.insert("uptime".to_string(), "0s".to_string());
-    health_data.insert("response_time".to_string(), format!("{}ms", start_time.elapsed().as_millis()));
-    
+    health_data.insert(
+        "response_time".to_string(),
+        format!("{}ms", start_time.elapsed().as_millis()),
+    );
+
     // Log this health check
-    log_api_query("/api/health", "GET", 200, start_time.elapsed().as_millis() as u64, None, None);
-    
+    log_api_query(
+        "/api/health",
+        "GET",
+        200,
+        start_time.elapsed().as_millis() as u64,
+        None,
+        None,
+    );
+
     Ok(ApiResponse::success(health_data))
 }
 

@@ -151,7 +151,12 @@ jobs:
     - name: Install cargo-tauri CLI
       run: cargo install tauri-cli --version ^2.0.0 --locked
       
-    - name: Build Android APK
+    - name: Initialize Android project
+      run: |
+        cd src-tauri
+        cargo tauri android init
+        
+    - name: Build Android app
       run: |
         cd src-tauri
         cargo tauri android build
@@ -193,6 +198,11 @@ jobs:
     - name: Install cargo-tauri CLI
       run: cargo install tauri-cli --version ^2.0.0 --locked
       
+    - name: Initialize iOS project
+      run: |
+        cd src-tauri
+        cargo tauri ios init
+        
     - name: Setup Xcode
       uses: maxim-lobanov/setup-xcode@v1
       with:

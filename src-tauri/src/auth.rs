@@ -1,9 +1,9 @@
+use crate::supabase::SupabaseClient;
+use crate::tunnel::TunnelState;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
-use crate::supabase::SupabaseClient;
-use crate::tunnel::TunnelState;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct LoginRequest {
@@ -119,7 +119,7 @@ pub async fn verify_captcha(
     // Verify with CAPTCHA service (hCaptcha, reCAPTCHA, etc.)
     // This is a placeholder implementation
     println!("Verifying CAPTCHA token: {}", captcha_token);
-    
+
     // In production, verify with actual CAPTCHA service
     // For demo purposes, always return true
     Ok(true)
@@ -148,9 +148,7 @@ pub async fn check_cloudflare_health(
 }
 
 #[tauri::command]
-pub async fn safe_direct_mode(
-    state: tauri::State<'_, AuthState>,
-) -> Result<(), AuthError> {
+pub async fn safe_direct_mode(state: tauri::State<'_, AuthState>) -> Result<(), AuthError> {
     let mut cloudflare_status = state.cloudflare_status.write().await;
     *cloudflare_status = false;
     println!("Switched to direct mode - Cloudflare unavailable");
@@ -158,42 +156,48 @@ pub async fn safe_direct_mode(
 }
 
 // Check Cloudflare Tunnel status
-async fn check_cloudflare_tunnel_status() -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
+async fn check_cloudflare_tunnel_status() -> Result<bool, Box<dyn std::error::Error + Send + Sync>>
+{
     let client = reqwest::Client::new();
-    
+
     // Try to reach Supabase through Cloudflare Tunnel
     let cloudflare_url = std::env::var("CLOUDFLARE_TUNNEL_URL")
         .unwrap_or_else(|_| "https://your-app.trycloudflare.com".to_string());
-    
+
     let health_check_url = format!("{}/health", cloudflare_url);
-    
-    match client.get(&health_check_url)
+
+    match client
+        .get(&health_check_url)
         .timeout(Duration::from_secs(5))
         .send()
-        .await {
-            Ok(response) => {
-                Ok(response.status().is_success())
-            }
-            Err(_) => {
-                // If Cloudflare Tunnel fails, try direct Supabase
-                let direct_url = std::env::var("SUPABASE_URL")
-                    .unwrap_or_else(|_| "https://ombbxzpyawyyzurhrrjg.supabase.co".to_string());
-                
-                let direct_health_url = format!("{}/rest/v1/", direct_url);
-                
-                match client.get(&direct_health_url)
-                    .timeout(Duration::from_secs(3))
-                    .header("apikey", std::env::var("SUPABASE_ANON_KEY").unwrap_or_default())
-                    .send()
-                    .await {
-                        Ok(response) => Ok(response.status().is_success()),
-                        Err(e) => {
-                            println!("Both Cloudflare and direct connections failed: {}", e);
-                            Ok(false)
-                        }
-                    }
+        .await
+    {
+        Ok(response) => Ok(response.status().is_success()),
+        Err(_) => {
+            // If Cloudflare Tunnel fails, try direct Supabase
+            let direct_url = std::env::var("SUPABASE_URL")
+                .unwrap_or_else(|_| "https://ombbxzpyawyyzurhrrjg.supabase.co".to_string());
+
+            let direct_health_url = format!("{}/rest/v1/", direct_url);
+
+            match client
+                .get(&direct_health_url)
+                .timeout(Duration::from_secs(3))
+                .header(
+                    "apikey",
+                    std::env::var("SUPABASE_ANON_KEY").unwrap_or_default(),
+                )
+                .send()
+                .await
+            {
+                Ok(response) => Ok(response.status().is_success()),
+                Err(e) => {
+                    println!("Both Cloudflare and direct connections failed: {}", e);
+                    Ok(false)
+                }
             }
         }
+    }
 }
 
 // Internal helper functions
@@ -222,27 +226,37 @@ async fn is_suspicious_behavior(
             .iter()
             .filter(|&&time| time.elapsed() < Duration::from_secs(300)) // 5 minutes
             .collect();
-        
+
         // 3+ failed attempts trigger CAPTCHA
         if recent_attempts.len() >= 3 {
-            println!("DEBUG: Suspicious behavior detected - {} failed attempts for {}", recent_attempts.len(), request.email);
+            println!(
+                "DEBUG: Suspicious behavior detected - {} failed attempts for {}",
+                recent_attempts.len(),
+                request.email
+            );
             return true;
         }
     }
-    
+
     // Check tunnel status - if tunnel is down, require extra verification
     let tunnel_status = tunnel_state.status.read().await;
     if !tunnel_status.is_active {
-        println!("DEBUG: Tunnel is down, requiring extra verification for {}", request.email);
+        println!(
+            "DEBUG: Tunnel is down, requiring extra verification for {}",
+            request.email
+        );
         return true;
     }
-    
+
     // Check if response time is too high (indicates potential issues)
     if tunnel_status.response_time_ms > 1000 {
-        println!("DEBUG: High response time ({}ms), requiring verification for {}", tunnel_status.response_time_ms, request.email);
+        println!(
+            "DEBUG: High response time ({}ms), requiring verification for {}",
+            tunnel_status.response_time_ms, request.email
+        );
         return true;
     }
-    
+
     // Check if this is a new device (simplified)
     if let Some(device_info) = &request.device_info {
         let suspicious_ips = auth_state.suspicious_ips.read().await;
@@ -252,15 +266,17 @@ async fn is_suspicious_behavior(
             return true;
         }
     }
-    
+
     false
 }
 
 async fn record_failed_attempt(email: &str, state: &AuthState) {
     let mut failed_attempts = state.failed_attempts.write().await;
-    let attempts = failed_attempts.entry(email.to_string()).or_insert_with(Vec::new);
+    let attempts = failed_attempts
+        .entry(email.to_string())
+        .or_insert_with(Vec::new);
     attempts.push(Instant::now());
-    
+
     // Clean old attempts (older than 1 hour)
     attempts.retain(|&time| time.elapsed() < Duration::from_secs(3600));
 }
@@ -273,10 +289,16 @@ async fn clear_failed_attempts(email: &str, state: &AuthState) {
 async fn attempt_supabase_login(request: &LoginRequest) -> Result<String, AuthError> {
     // Whisper Weather kendi Supabase projesini kullanmalı
     let supabase_client = SupabaseClient::new();
-    
-    match supabase_client.sign_in(&request.email, &request.password).await {
+
+    match supabase_client
+        .sign_in(&request.email, &request.password)
+        .await
+    {
         Ok(auth_response) => {
-            println!("DEBUG: Whisper Weather login successful for: {}", request.email);
+            println!(
+                "DEBUG: Whisper Weather login successful for: {}",
+                request.email
+            );
             Ok(auth_response.access_token)
         }
         Err(e) => {
@@ -293,11 +315,13 @@ async fn attempt_supabase_login(request: &LoginRequest) -> Result<String, AuthEr
 // Simple tunnel check function
 async fn check_simple_tunnel_status() -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
     let client = reqwest::Client::new();
-    match client.get("https://www.zentaira.com")
+    match client
+        .get("https://www.zentaira.com")
         .timeout(Duration::from_secs(3))
         .send()
-        .await {
-            Ok(response) => Ok(response.status().is_success()),
-            Err(e) => Err(Box::new(e)),
-        }
+        .await
+    {
+        Ok(response) => Ok(response.status().is_success()),
+        Err(e) => Err(Box::new(e)),
+    }
 }
