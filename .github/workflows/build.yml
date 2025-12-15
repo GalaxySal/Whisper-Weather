@@ -52,42 +52,35 @@ jobs:
         sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev patchelf
         # Install cross-compilation dependencies for ARM64
         if [ "${{ matrix.target }}" = "aarch64-unknown-linux-gnu" ]; then
-          # Add ARM64 architecture support first
+          # 1. ARM64 mimari desteğini ekleyin
           sudo dpkg --add-architecture arm64
-          # Add ARM64 ports repository for Ubuntu 24.04 and disable problematic security.ubuntu.com for ARM64
-          printf "Types: deb\nURIs: http://ports.ubuntu.com/ubuntu-ports/\nSuites: noble noble-updates noble-backports\nComponents: main restricted universe multiverse\nSigned-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg\nArchitectures: arm64\n" | sudo tee /etc/apt/sources.list.d/ubuntu-arm64.sources
-          # Backup and disable AMD64 security repository to prevent ARM64 404 errors
-          sudo cp /etc/apt/sources.list.d/ubuntu.sources /etc/apt/sources.list.d/ubuntu.sources.bak
-          # Create new sources.list without security repository for ARM64 compatibility
-          printf "Types: deb\nURIs: http://archive.ubuntu.com/ubuntu/\nSuites: noble noble-updates noble-backports\nComponents: main restricted universe multiverse\nSigned-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg\nArchitectures: amd64\n" | sudo tee /etc/apt/sources.list.d/ubuntu.sources
           sudo apt-get update
-          # Install cross-compilation tools and libraries
-          sudo apt-get install -y --no-install-recommends g++-aarch64-linux-gnu pkg-config libglib2.0-dev:arm64
-          # Set up cross-compilation environment variables
-          export PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig
-          export PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1
-          export PKG_CONFIG_ALLOW_SYSTEM_LIBS=1
-          # Configure pkg-config for cross-compilation (Ubuntu multiarch)
-          export PKG_CONFIG_SYSROOT_DIR=/
-          export PKG_CONFIG_LIBDIR=/usr/lib/aarch64-linux-gnu/pkgconfig
-          # Use aarch64-specific pkg-config wrapper
-          sudo update-alternatives --install /usr/bin/pkg-config pkg-config /usr/bin/aarch64-linux-gnu-pkg-config 100 || true
-          # Install complete WebKit2GTK development environment with all dependencies for ARM64
+          
+          # 2. Gerekli tüm çapraz derleme araçlarını ve kütüphanelerini yükleyin
           sudo apt-get install -y --no-install-recommends \
+            g++-aarch64-linux-gnu \
+            pkg-config \
+            libglib2.0-dev:arm64 \
             libwebkit2gtk-4.1-dev:arm64 \
-            libpango1.0-dev:arm64 \
-            libpangocairo1.0-dev:arm64 \
             libgtk-3-dev:arm64 \
             libsoup-3.0-dev:arm64 \
             libjavascriptcoregtk-4.1-dev:arm64 \
             libharfbuzz-dev:arm64 \
             libcairo2-dev:arm64 \
             libgdk-pixbuf-2.0-dev:arm64 \
-            libatk1.0-dev:arm64 || true
-          # Install cross-compilation pkg-config files
-          sudo apt-get install -y --no-install-recommends pkg-config:aarch64-linux-gnu || true
-          # Fix any remaining broken packages
-          sudo apt-get install -f -y || true
+            libatk1.0-dev:arm64 \
+            libpango1.0-dev:arm64 \
+            libpangocairo1.0-dev:arm64 || true
+            
+          # 3. PKG_CONFIG ayarlarına bir ortam değişkeni ekleyin
+          export PKG_CONFIG_ALLOW_CROSS=1
+          export PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig
+          export PKG_CONFIG_SYSROOT_DIR=/
+          export PKG_CONFIG_LIBDIR=/usr/lib/aarch64-linux-gnu/pkgconfig
+          
+          # 4. Kütüphanelerin gerçekten yüklendiğini kontrol eden bir kontrol ekleyin
+          echo "Checking for essential ARM64 libraries:"
+          ls -l /usr/lib/aarch64-linux-gnu/libgtk-3.so || echo "libgtk-3.so NOT found!"
         fi
         
     - name: Rust setup
