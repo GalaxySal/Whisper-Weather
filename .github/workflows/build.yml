@@ -61,6 +61,12 @@ jobs:
           patchelf || true # Hata verse bile devam at
 
         if [ "${{ matrix.target }}" = "aarch64-unknown-linux-gnu" ]; then
+          # 0. KRİTİK DÜZELTME: AARCH64 ikili dosyalarını çalıştırabilmek için QEMU kurun.
+          # Bu, post-installation betiklerinin başarısız olmasını engeller.
+          sudo apt-get install -y qemu-user-static || true
+          
+          echo "Configuring ARM64 multi-arch environment..."
+          
           # 1. ARM64 mimari desteğini ekle
           sudo dpkg --add-architecture arm64
           
