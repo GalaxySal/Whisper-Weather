@@ -69,6 +69,9 @@ jobs:
       timeout-minutes: 20
       continue-on-error: false
       
+    - name: Install cargo-tauri CLI
+      run: cargo install tauri-cli --version ^2.0.0 --locked
+      
     - name: Build the app
       run: |
         echo "Building app for ${{ matrix.target }}..."
@@ -104,3 +107,153 @@ jobs:
         path: |
           src-tauri/target/${{ matrix.target }}/release/bundle/
         retention-days: 30
+        
+  # Android Build Job
+  android:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+      
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: aarch64-linux-android
+        
+    - name: Rust cache
+      uses: swatinem/rust-cache@v2
+      with:
+        workspaces: src-tauri
+        
+    - name: Sync node version and setup cache
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.19.0'
+        cache: 'npm'
+        
+    - name: Install frontend dependencies
+      run: npm ci
+      
+    - name: Setup NDK
+      run: |
+        echo "ANDROID_NDK_ROOT=$ANDROID_NDK_HOME" >> $GITHUB_ENV
+        
+    - name: Install cargo-tauri CLI
+      run: cargo install tauri-cli --version ^2.0.0 --locked
+      
+    - name: Build Android APK
+      run: |
+        cd src-tauri
+        cargo tauri android build
+        
+    - name: Upload Android artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: whisper-weather-android
+        path: |
+          src-tauri/target/android/*/apk/release/*.apk
+        retention-days: 30
+        
+  # iOS Build Job
+  ios:
+    runs-on: macos-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: aarch64-apple-ios
+        
+    - name: Rust cache
+      uses: swatinem/rust-cache@v2
+      with:
+        workspaces: src-tauri
+        
+    - name: Sync node version and setup cache
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.19.0'
+        cache: 'npm'
+        
+    - name: Install frontend dependencies
+      run: npm ci
+      
+    - name: Install cargo-tauri CLI
+      run: cargo install tauri-cli --version ^2.0.0 --locked
+      
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+        
+    - name: Build iOS app
+      run: |
+        cd src-tauri
+        cargo tauri ios build
+        
+    - name: Upload iOS artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: whisper-weather-ios
+        path: |
+          src-tauri/target/ios/*/build/Build/Products/Release-iphoneos/*.ipa
+        retention-days: 30
+        
+  # Security Scan Job
+  security:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: 'trivy-results.sarif'
+        
+  # CodeQL Analysis Job
+  codeql:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'javascript', 'rust' ]
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v4
+      with:
+        languages: ${{ matrix.language }}
+        
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v4
+      
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v4
+      with:
+        category: "/language:${{matrix.language}}"
