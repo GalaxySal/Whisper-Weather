@@ -219,6 +219,14 @@ jobs:
         export PROVISIONING_PROFILE=""
         export CODE_SIGNING_REQUIRED=NO
         export CODE_SIGN_ENTITLEMENTS=""
+        export TAURI_CLI_NO_DEV_SERVER=true
+        export TAURI_SKIP_DEV_SERVER=true
+        export TAURI_BUNDLE_IDENTIFIER="com.zentaria.whisper-weather"
+        
+        # Create server address file to prevent Tauri CLI panic
+        mkdir -p /var/folders/bp/kmfmhnl95kx1c8x321z7twbw0000gn/T/
+        echo "127.0.0.1:1430" > /var/folders/bp/kmfmhnl95kx1c8x321z7twbw0000gn/T/com.zentaria.whisper-weather-server-addr
+        
         xcodebuild -project gen/apple/whisper-weather-app.xcodeproj \
                    -scheme whisper-weather-app_iOS \
                    -configuration Release \
