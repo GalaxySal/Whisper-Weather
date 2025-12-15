@@ -107,27 +107,25 @@ jobs:
           # 4. KRİTİK SON ÇARE: glib-2.0.pc dosyasını manuel kopyala ve düzenle
           
           # A) Kaynak dosyayı kopyala (amd64'ten arm64 arama dizinine)
-          # NOT: libglib2.0-dev paketi, x86_64 için kurulmuş olmalıdır.
           ARM64_PC_DIR="/usr/lib/aarch64-linux-gnu/pkgconfig"
-          AMD64_PC_DIR="/usr/lib/x86_64-linux-gnu/pkgconfig" # Veya /usr/lib/pkgconfig
+          AMD64_PC_DIR="/usr/lib/x86_64-linux-gnu/pkgconfig" 
           
           echo "Attempting to manually copy glib-2.0.pc..."
           
           # Hedef dizin yoksa oluştur
-          sudo mkdir -p $ARM64_PC_DIR
+          /usr/bin/sudo mkdir -p $ARM64_PC_DIR
           
           # AMD64 dizininden hedef dizine kopyala
           if [ -f "$AMD64_PC_DIR/glib-2.0.pc" ]; then
-              sudo cp "$AMD64_PC_DIR/glib-2.0.pc" "$ARM64_PC_DIR/glib-2.0.pc"
+              /usr/bin/sudo cp "$AMD64_PC_DIR/glib-2.0.pc" "$ARM64_PC_DIR/glib-2.0.pc"
           else
-              # Alternatif yoldan kopyalamayı dene (bazı sistemlerde x86_64 ön eki olmadan kurulur)
-              sudo cp "/usr/lib/pkgconfig/glib-2.0.pc" "$ARM64_PC_DIR/glib-2.0.pc" || true
+              # Alternatif yoldan kopyalamayı dene
+              /usr/bin/sudo cp "/usr/lib/pkgconfig/glib-2.0.pc" "$ARM64_PC_DIR/glib-2.0.pc" || true
           fi
           
           # B) Kopyalanan dosyayı ARM64 mimarisine göre düzenle
-          # Dosya içindeki yolların (örneğin Libdir) aarch64'ü işaret etmesi gerekir.
-          sudo sed -i 's/\/lib\/x86_64-linux-gnu\//\/lib\/aarch64-linux-gnu\//g' "$ARM64_PC_DIR/glib-2.0.pc"
-          sudo sed -i 's/\/include\/x86_64-linux-gnu\//\/include\/aarch64-linux-gnu\//g' "$ARM64_PC_DIR/glib-2.0.pc"
+          /usr/bin/sudo sed -i 's/\/lib\/x86_64-linux-gnu\//\/lib\/aarch64-linux-gnu\//g' "$ARM64_PC_DIR/glib-2.0.pc"
+          /usr/bin/sudo sed -i 's/\/include\/x86_64-linux-gnu\//\/include\/aarch64-linux-gnu\//g' "$ARM64_PC_DIR/glib-2.0.pc"
           
           echo "glib-2.0.pc manually placed and modified."
 
