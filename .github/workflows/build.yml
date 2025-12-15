@@ -72,21 +72,20 @@ jobs:
           # D) APT'yi tekrar güncelle
           sudo apt-get update -qq
           
-          # 3. Gerekli tüm çapraz derleme araçlarını ve kütüphanelerini yükle
-          sudo apt-get install -y --no-install-recommends \
+          # 3. Gerekli tüm çapraz derleme araçlarını ve kütüphanelerini yükle (KRİTİK GÜNCELLEME)
+          # --force-overwrite: Bu, multiarch'te çakışan dconf, init vb. paketlerdeki dosyaların üzerine yazmayı dener.
+          # -y: Onay istemez
+          # --no-install-recommends: Sadece gerekli paketleri yükler.
+          sudo apt-get install -y --no-install-recommends -o Dpkg::Options::=--force-overwrite \
             g++-aarch64-linux-gnu \
+            pkg-config \
             libglib2.0-dev:arm64 \
-            libwebkit2gtk-4.1-dev:arm64 \
             libgtk-3-dev:arm64 \
-            libsoup-3.0-dev:arm64 \
-            libjavascriptcoregtk-4.1-dev:arm64 \
+            libwebkit2gtk-4.1-dev:arm64 \
             libharfbuzz-dev:arm64 \
             libcairo2-dev:arm64 \
             libgdk-pixbuf-2.0-dev:arm64 \
-            libatk1.0-dev:arm64 \
-            libpango1.0-dev:arm64
-            # KALDIRILDI: libpangocairo1.0-dev:arm64 -> Noble'da bulunmuyor
-            # libpangocairo-1.0-0 paketi var ama dev paketi yok
+            libatk1.0-dev:arm64
             
           # 4. PKG_CONFIG ayarlarını koru (bu, linker'ın kütüphaneleri bulması için gerekli)
           export PKG_CONFIG_ALLOW_CROSS=1
