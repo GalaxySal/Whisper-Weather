@@ -83,10 +83,7 @@ pub async fn login_user(
     }
 
     // Check tunnel availability
-    let cloudflare_ok = match check_simple_tunnel_status().await {
-        Ok(status) => status,
-        Err(_) => false,
-    };
+    let cloudflare_ok = (check_simple_tunnel_status().await).unwrap_or_default();
     if !cloudflare_ok {
         println!("DEBUG: Tunnel unavailable, switching to direct mode");
     }

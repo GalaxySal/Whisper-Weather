@@ -148,6 +148,7 @@ jobs:
     - name: Setup NDK
       run: |
         echo "ANDROID_NDK_ROOT=$ANDROID_NDK_HOME" >> $GITHUB_ENV
+        echo "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin" >> $GITHUB_PATH
         
     - name: Install cargo-tauri CLI
       run: cargo install tauri-cli --version ^2.0.0 --locked
@@ -212,6 +213,10 @@ jobs:
     - name: Build iOS app
       run: |
         cd src-tauri
+        export CODE_SIGNING_ALLOWED=NO
+        export CODE_SIGN_IDENTITY=""
+        export DEVELOPMENT_TEAM=""
+        export PROVISIONING_PROFILE=""
         cargo tauri ios build
         
     - name: Upload iOS artifacts

@@ -272,7 +272,7 @@ async fn get_user_stats() -> Result<serde_json::Value, String> {
 
     // Kullanıcı sayısını al
     let total_users = match client
-        .get(&format!("{}/rest/v1/profiles?select=count", supabase_url))
+        .get(format!("{}/rest/v1/profiles?select=count", supabase_url))
         .header("apikey", &supabase_key)
         .header("Authorization", &format!("Bearer {}", supabase_key))
         .send()
@@ -289,12 +289,12 @@ async fn get_user_stats() -> Result<serde_json::Value, String> {
     let thirty_days_ago = (chrono::Utc::now() - chrono::Duration::days(30)).to_rfc3339();
 
     let active_users = match client
-        .get(&format!(
+        .get(format!(
             "{}/rest/v1/user_sessions?select=count&last_sign_in=gte.{}",
             supabase_url, thirty_days_ago
         ))
         .header("apikey", &supabase_key)
-        .header("Authorization", &format!("Bearer {}", supabase_key))
+        .header("Authorization", format!("Bearer {}", supabase_key))
         .send()
         .await
     {
@@ -307,12 +307,12 @@ async fn get_user_stats() -> Result<serde_json::Value, String> {
 
     // Son 30 günde kaydolan yeni kullanıcılar
     let new_users_this_month = match client
-        .get(&format!(
+        .get(format!(
             "{}/rest/v1/profiles?select=count&created_at=gte.{}",
             supabase_url, thirty_days_ago
         ))
         .header("apikey", &supabase_key)
-        .header("Authorization", &format!("Bearer {}", supabase_key))
+        .header("Authorization", format!("Bearer {}", supabase_key))
         .send()
         .await
     {
@@ -325,12 +325,12 @@ async fn get_user_stats() -> Result<serde_json::Value, String> {
 
     // Hata raporlarını al
     let bugs_data = match client
-        .get(&format!(
+        .get(format!(
             "{}/rest/v1/bug_reports?select=status,severity",
             supabase_url
         ))
         .header("apikey", &supabase_key)
-        .header("Authorization", &format!("Bearer {}", supabase_key))
+        .header("Authorization", format!("Bearer {}", supabase_key))
         .send()
         .await
     {
@@ -384,12 +384,12 @@ async fn get_bug_reports() -> Result<serde_json::Value, String> {
     println!("DEBUG: Fetching bug reports from: {}", supabase_url);
 
     match client
-        .get(&format!(
+        .get(format!(
             "{}/rest/v1/bug_reports?select=*&order=created_at.desc",
             supabase_url
         ))
         .header("apikey", &supabase_key)
-        .header("Authorization", &format!("Bearer {}", supabase_key))
+        .header("Authorization", format!("Bearer {}", supabase_key))
         .header("Prefer", "return=representation")
         .send()
         .await
@@ -429,12 +429,12 @@ async fn update_bug_status(bug_id: String, new_status: String) -> Result<(), Str
     });
 
     match client
-        .patch(&format!(
+        .patch(format!(
             "{}/rest/v1/bug_reports?id=eq.{}",
             supabase_url, bug_id
         ))
         .header("apikey", &supabase_key)
-        .header("Authorization", &format!("Bearer {}", supabase_key))
+        .header("Authorization", format!("Bearer {}", supabase_key))
         .header("Content-Type", "application/json")
         .header("Prefer", "return=minimal")
         .json(&update_data)
@@ -456,12 +456,12 @@ async fn delete_bug_report(bug_id: String) -> Result<(), String> {
         .unwrap_or_else(|_| "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9tYmJ4enB5YXd5eXp1cmalionIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ2NTE4MjEsImV4cCI6MjA4MDIyNzgyMX0.jIbtBVHEKK-jeT3GqLupCtBkv-5qjwYvk5yAjLViILE".to_string());
 
     match client
-        .delete(&format!(
+        .delete(format!(
             "{}/rest/v1/bug_reports?id=eq.{}",
             supabase_url, bug_id
         ))
         .header("apikey", &supabase_key)
-        .header("Authorization", &format!("Bearer {}", supabase_key))
+        .header("Authorization", format!("Bearer {}", supabase_key))
         .header("Prefer", "return=minimal")
         .send()
         .await
@@ -569,7 +569,7 @@ fn get_system_theme() -> Result<String, String> {
     // Linux için sistem temasını kontrol et
     if cfg!(target_os = "linux") {
         let output = Command::new("gsettings")
-            .args(&["get", "org.gnome.desktop.interface", "gtk-theme"])
+            .args(["get", "org.gnome.desktop.interface", "gtk-theme"])
             .output()
             .map_err(|e| e.to_string())?;
 
@@ -581,7 +581,7 @@ fn get_system_theme() -> Result<String, String> {
         }
     } else if cfg!(target_os = "macos") {
         let output = Command::new("defaults")
-            .args(&["read", "-g", "AppleInterfaceStyle"])
+            .args(["read", "-g", "AppleInterfaceStyle"])
             .output()
             .map_err(|e| e.to_string())?;
 
@@ -595,7 +595,7 @@ fn get_system_theme() -> Result<String, String> {
         // Windows için registry kontrolü
         use std::process::Command;
         let output = Command::new("powershell")
-            .args(&["-Command", "Get-ItemProperty -Path 'HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize' | Select-Object -ExpandProperty AppsUseLightTheme"])
+            .args(["-Command", "Get-ItemProperty -Path 'HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize' | Select-Object -ExpandProperty AppsUseLightTheme"])
             .output()
             .map_err(|e| e.to_string())?;
 

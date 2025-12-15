@@ -25,7 +25,7 @@ pub async fn setup_auto_updater(app: AppHandle) -> Result<(), Box<dyn std::error
                 .notification()
                 .builder()
                 .title("Whisper Weather Update")
-                .body(&format!(
+                .body(format!(
                     "New version {} is available. Installing automatically...",
                     update.version
                 ))

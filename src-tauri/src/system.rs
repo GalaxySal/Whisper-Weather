@@ -99,7 +99,7 @@ async fn get_device_model() -> Option<String> {
         }
     } else if cfg!(target_os = "macos") {
         // Get Mac model
-        if let Ok(output) = Command::new("sysctl").args(&["-n", "hw.model"]).output() {
+        if let Ok(output) = Command::new("sysctl").args(["-n", "hw.model"]).output() {
             if let Ok(model) = String::from_utf8(output.stdout) {
                 return Some(model.trim().to_string());
             }
@@ -107,7 +107,7 @@ async fn get_device_model() -> Option<String> {
     } else if cfg!(target_os = "windows") {
         // Get Windows model
         if let Ok(output) = Command::new("wmic")
-            .args(&["computersystem", "get", "model"])
+            .args(["computersystem", "get", "model"])
             .output()
         {
             if let Ok(model) = String::from_utf8(output.stdout) {
@@ -122,13 +122,7 @@ async fn get_device_model() -> Option<String> {
 }
 
 async fn get_kernel_version() -> Option<String> {
-    if cfg!(target_os = "linux") {
-        if let Ok(output) = Command::new("uname").arg("-r").output() {
-            if let Ok(version) = String::from_utf8(output.stdout) {
-                return Some(version.trim().to_string());
-            }
-        }
-    } else if cfg!(target_os = "macos") {
+    if cfg!(target_os = "linux") || cfg!(target_os = "macos") {
         if let Ok(output) = Command::new("uname").arg("-r").output() {
             if let Ok(version) = String::from_utf8(output.stdout) {
                 return Some(version.trim().to_string());
