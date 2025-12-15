@@ -63,6 +63,10 @@ jobs:
           sudo apt-get update
           # Install cross-compilation tools and libraries
           sudo apt-get install -y --no-install-recommends g++-aarch64-linux-gnu pkg-config libglib2.0-dev:arm64
+          # Set up cross-compilation environment variables
+          export PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig
+          export PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1
+          export PKG_CONFIG_ALLOW_SYSTEM_LIBS=1
           # Install complete WebKit2GTK development environment with all dependencies for ARM64
           sudo apt-get install -y --no-install-recommends \
             libwebkit2gtk-4.1-dev:arm64 \
@@ -71,6 +75,8 @@ jobs:
             libgtk-3-dev:arm64 \
             libsoup-3.0-dev:arm64 \
             libjavascriptcoregtk-4.1-dev:arm64 || true
+          # Install cross-compilation pkg-config files
+          sudo apt-get install -y --no-install-recommends pkg-config:aarch64-linux-gnu || true
           # Fix any remaining broken packages
           sudo apt-get install -f -y || true
         fi
