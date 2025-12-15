@@ -63,12 +63,9 @@ jobs:
           sudo apt-get update
           # Install cross-compilation tools and libraries
           sudo apt-get install -y --no-install-recommends g++-aarch64-linux-gnu pkg-config libglib2.0-dev:arm64
-          # Install Pango development libraries for ARM64 cross-compilation (required for linking)
-          sudo apt-get install -y --no-install-recommends libpango1.0-dev:arm64 libpangocairo1.0-dev:arm64 || true
-          # Install GTK3 development libraries
-          sudo apt-get install -y --no-install-recommends libgtk-3-dev:arm64 || true
-          # Install WebKit2GTK development libraries and dependencies for ARM64
-          sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev:arm64 libsoup-3.0-dev:arm64 libjavascriptcoregtk-4.1-dev:arm64 || true
+          # Install complete WebKit2GTK development environment for ARM64
+          sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev:arm64 || true
+          # This will pull in all dependencies: Pango, GTK3, Soup, JavaScriptCore, etc.
           # Fix any remaining broken packages
           sudo apt-get install -f -y || true
         fi
