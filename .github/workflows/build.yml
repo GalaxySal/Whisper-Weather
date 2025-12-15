@@ -111,6 +111,19 @@ jobs:
       timeout-minutes: 20
       continue-on-error: false
       
+    - name: Configure Cargo for AARCH64
+      if: matrix.target == 'aarch64-unknown-linux-gnu'
+      run: |
+        mkdir -p src-tauri/.cargo
+        echo '[target.aarch64-unknown-linux-gnu]' > src-tauri/.cargo/config.toml
+        echo 'linker = "aarch64-linux-gnu-gcc"' >> src-tauri/.cargo/config.toml
+        echo 'rustflags = [' >> src-tauri/.cargo/config.toml
+        echo '    "-C", "link-arg=-Wl,-rpath,/usr/lib/aarch64-linux-gnu",' >> src-tauri/.cargo/config.toml
+        echo '    "-C", "link-arg=-L/usr/lib/aarch64-linux-gnu",' >> src-tauri/.cargo/config.toml
+        echo '    "-C", "link-arg=-L/lib/aarch64-linux-gnu",' >> src-tauri/.cargo/config.toml
+        echo ']' >> src-tauri/.cargo/config.toml
+      working-directory: ${{ github.workspace }}
+      
     - name: Build the app
       run: |
         echo "Building app for ${{ matrix.target }}..."
@@ -118,12 +131,9 @@ jobs:
         if [ "${{ matrix.target }}" = "aarch64-unknown-linux-gnu" ]; then
           export PKG_CONFIG_ALLOW_CROSS=1
           export PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig
-          # KRİTİK ÇÖZÜM: Linker'ın kütüphaneleri arayacağı yolu (aarch64 kütüphane yolu) LDFLAGS ile tanımlayın
-          export LDFLAGS="-L/usr/lib/aarch64-linux-gnu -L/lib/aarch64-linux-gnu"
           export PKG_CONFIG_SYSROOT_DIR=/
-          export CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc
-          export CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++
-          export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
+          
+          # LDFLAGS, CC/CXX, ve CARGO_TARGET_LINKER ayarları config.toml'a taşındı, artık burada gerek yok.
         fi
         # For all platforms, use vendored OpenSSL to avoid compilation issues
         if [[ "${{ matrix.platform }}" == "windows-latest" ]]; then
