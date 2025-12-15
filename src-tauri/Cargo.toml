@@ -47,6 +47,10 @@ openssl-sys = { version = "0.9", features = ["vendored"], default-features = fal
 [target.'cfg(target_os = "ios")'.dependencies]
 # iOS uses native TLS, no OpenSSL needed at all
 
+[target.'cfg(target_os = "linux")'.dependencies]
+# Linux uses rustls to avoid OpenSSL compilation issues
+reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
+
 [target.'cfg(all(target_arch = "aarch64", target_os = "windows"))'.dependencies]
 # Disable OpenSSL for Windows ARM64 to avoid compilation issues
 reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
