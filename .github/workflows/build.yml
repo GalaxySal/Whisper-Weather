@@ -52,14 +52,23 @@ jobs:
         sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev patchelf
         # Install cross-compilation dependencies for ARM64
         if [ "${{ matrix.target }}" = "aarch64-unknown-linux-gnu" ]; then
-          # 1. ARM64 mimari desteğini ekleyin
+          # 1. ARM64 mimari desteğini ekle
           sudo dpkg --add-architecture arm64
-          sudo apt-get update
           
-          # 2. Gerekli tüm çapraz derleme araçlarını ve kütüphanelerini yükleyin
+          # 2. KRİTİK DÜZELTME: Azure/Security 404 hatalarını atlamak için /etc/apt/sources.list dosyasını düzenle
+          # a. Tüm arm64 satırlarını (özellikle security satırlarını) sources.list'ten kaldırın.
+          sudo sed -i '/arm64/d' /etc/apt/sources.list
+          
+          # b. Ports deposunu ekleyerek arm64 paketlerini alacağımız güvenilir kaynağı tanımlayın.
+          printf "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ noble main restricted universe multiverse\n" | sudo tee -a /etc/apt/sources.list
+          printf "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ noble-updates main restricted universe multiverse\n" | sudo tee -a /etc/apt/sources.list
+          
+          # c. apt-get update'i tekrar çalıştırın (bu sefer 404 almamalı)
+          sudo apt-get update -qq
+          
+          # 3. Gerekli tüm çapraz derleme araçlarını ve kütüphanelerini yükle
           sudo apt-get install -y --no-install-recommends \
             g++-aarch64-linux-gnu \
-            pkg-config \
             libglib2.0-dev:arm64 \
             libwebkit2gtk-4.1-dev:arm64 \
             libgtk-3-dev:arm64 \
@@ -70,17 +79,13 @@ jobs:
             libgdk-pixbuf-2.0-dev:arm64 \
             libatk1.0-dev:arm64 \
             libpango1.0-dev:arm64 \
-            libpangocairo1.0-dev:arm64 || true
+            libpangocairo1.0-dev:arm64
             
-          # 3. PKG_CONFIG ayarlarına bir ortam değişkeni ekleyin
+          # 4. PKG_CONFIG ayarlarını koru (bu adım zaten önceki çözümde doğruydu)
           export PKG_CONFIG_ALLOW_CROSS=1
           export PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig
           export PKG_CONFIG_SYSROOT_DIR=/
           export PKG_CONFIG_LIBDIR=/usr/lib/aarch64-linux-gnu/pkgconfig
-          
-          # 4. Kütüphanelerin gerçekten yüklendiğini kontrol eden bir kontrol ekleyin
-          echo "Checking for essential ARM64 libraries:"
-          ls -l /usr/lib/aarch64-linux-gnu/libgtk-3.so || echo "libgtk-3.so NOT found!"
         fi
         
     - name: Rust setup
