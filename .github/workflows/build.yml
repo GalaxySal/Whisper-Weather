@@ -97,12 +97,23 @@ jobs:
           
           # Hatalı bağımlılıkları temizlemeye çalış
           sudo apt-get install -f -y || true
+          
+          # KRİTİK KONTROL: glib-2.0.pc dosyasının gerçekten var olup olmadığını kontrol edin
+          echo "Verifying glib-2.0.pc existence:"
+          GLIB_PC_PATH=$(find / -name "glib-2.0.pc" 2>/dev/null | grep aarch64)
+          if [ -z "$GLIB_PC_PATH" ]; then
+            echo "!! glib-2.0.pc NOT found for aarch64. Manual fix required."
+            # Eğer bulunamazsa, bu, kurulumun başarısız olduğu anlamına gelir.
+          else
+            echo "glib-2.0.pc found at: $GLIB_PC_PATH"
+          fi
             
-          # 4. PKG_CONFIG ayarlarını koru (bu, linker'ın kütüphaneleri bulması için gerekli)
+          # 4. PKG_CONFIG ayarları (Genişletilmiş PKG_CONFIG_PATH)
           export PKG_CONFIG_ALLOW_CROSS=1
-          export PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig
+          # /usr/lib/aarch64-linux-gnu/ glib-2.0.pc için sık kullanılan bir yoldur.
+          export PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig:/usr/lib/aarch64-linux-gnu
           export PKG_CONFIG_SYSROOT_DIR=/
-          export PKG_CONFIG_LIBDIR=/usr/lib/aarch64-linux-gnu/pkgconfig
+          export PKG_CONFIG_LIBDIR=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/lib/aarch64-linux-gnu
         fi
         
     - name: Rust setup
