@@ -74,6 +74,7 @@ jobs:
       run: cargo install tauri-cli --version ^2.0.0 --locked
       
     - name: Build the app
+      shell: bash
       run: |
         echo "Building app for ${{ matrix.target }}..."
         # For all platforms, use vendored OpenSSL to avoid compilation issues
@@ -337,7 +338,7 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update -qq
-        sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev libglib2.0-dev libgobject-2.0-dev libgtk-3-dev
+        sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev libglib2.0-dev libgtk-3-dev
         
     - name: Install frontend dependencies
       run: npm ci
