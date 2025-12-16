@@ -1,19 +1,9 @@
-import { Moon, Sun, Monitor, Cloud, Languages, Heart, LogOut, Info } from 'lucide-react'
-import { useTheme } from '@/hooks/use-theme'
-import { useLanguage } from '@/hooks/use-language'
-import { useFavorites } from '@/hooks/use-favorites'
-import { supabase } from '@/lib/supabase'
-import { translations } from '@/lib/translations'
-import {
-  Menubar,
-  MenubarContent,
-  MenubarItem,
-  MenubarMenu,
-  MenubarRadioGroup,
-  MenubarRadioItem,
-  MenubarSeparator,
-  MenubarTrigger,
-} from '@/components/ui/menubar'
+import { Moon, Sun, Monitor, Languages, Heart, Info, LogOut } from 'lucide-react'
+import { useTheme } from '../hooks/use-theme'
+import { useLanguage } from '../hooks/use-language'
+import { useFavorites } from '../hooks/use-favorites'
+import { useState } from 'react'
+import { supabase } from '../lib/supabase'
 
 interface NavigationProps {
   user: any
@@ -21,111 +11,127 @@ interface NavigationProps {
 }
 
 export default function Navigation({ user, onPageChange }: NavigationProps) {
-  const { theme, setTheme } = useTheme()
-  const { language, setLanguage } = useLanguage()
+  const { setTheme } = useTheme()
+  const { setLanguage } = useLanguage()
   const { favorites } = useFavorites()
-  const t = translations[language]
+  const [themeMenuOpen, setThemeMenuOpen] = useState(false)
+  const [languageMenuOpen, setLanguageMenuOpen] = useState(false)
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
   }
 
   return (
-    <Menubar className="glass-effect border-white/20 bg-white/10">
-      <MenubarMenu>
-        <MenubarTrigger className="text-white hover:bg-white/20">
-          {user.email}
-        </MenubarTrigger>
-        <MenubarContent className="glass-effect border-white/20 bg-white/10">
-          <MenubarItem className="text-white hover:bg-white/20">
-            <Heart className="mr-2 h-4 w-4" />
-            {t.settings.favorites} ({favorites.length})
-          </MenubarItem>
-          <MenubarSeparator className="bg-white/20" />
-          <MenubarItem 
-            className="text-white hover:bg-white/20 cursor-pointer"
-            onClick={() => onPageChange('about')}
-          >
-            <Info className="mr-2 h-4 w-4" />
-            {t.about.title}
-          </MenubarItem>
-          <MenubarSeparator className="bg-white/20" />
-          <MenubarItem 
-            className="text-white hover:bg-white/20 cursor-pointer"
-            onClick={handleLogout}
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            {t.navigation.logout}
-          </MenubarItem>
-        </MenubarContent>
-      </MenubarMenu>
+    <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-2 flex items-center gap-2">
+      {/* User Menu */}
+      <div className="relative">
+        <button className="px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-colors">
+          {user?.email || 'User'}
+        </button>
+        <div className="absolute top-full left-0 mt-2 w-48 bg-white/95 backdrop-blur-md border border-white/20 rounded-xl shadow-xl z-50">
+          <div className="p-2 text-gray-900">
+            <div className="flex items-center gap-2 p-2 hover:bg-blue-50 rounded-lg">
+              <Heart className="w-4 h-4" />
+              <span>Favorites ({favorites.length})</span>
+            </div>
+            <div 
+              className="flex items-center gap-2 p-2 hover:bg-blue-50 rounded-lg cursor-pointer"
+              onClick={() => onPageChange('about')}
+            >
+              <Info className="w-4 h-4" />
+              <span>About</span>
+            </div>
+            <div 
+              className="flex items-center gap-2 p-2 hover:bg-blue-50 rounded-lg cursor-pointer"
+              onClick={handleLogout}
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Logout</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <MenubarMenu>
-        <MenubarTrigger className="text-white hover:bg-white/20">
-          {t.navigation.theme}
-        </MenubarTrigger>
-        <MenubarContent className="glass-effect border-white/20 bg-white/10">
-          <MenubarRadioGroup value={theme}>
-            <MenubarRadioItem 
-              value="light" 
-              className="text-white hover:bg-white/20"
-              onClick={() => setTheme('light')}
-            >
-              <Sun className="mr-2 h-4 w-4" />
-              {t.settings.light}
-            </MenubarRadioItem>
-            <MenubarRadioItem 
-              value="dark" 
-              className="text-white hover:bg-white/20"
-              onClick={() => setTheme('dark')}
-            >
-              <Moon className="mr-2 h-4 w-4" />
-              {t.settings.dark}
-            </MenubarRadioItem>
-            <MenubarRadioItem 
-              value="system" 
-              className="text-white hover:bg-white/20"
-              onClick={() => setTheme('system')}
-            >
-              <Monitor className="mr-2 h-4 w-4" />
-              {t.settings.system}
-            </MenubarRadioItem>
-            <MenubarRadioItem 
-              value="weather" 
-              className="text-white hover:bg-white/20"
-              onClick={() => setTheme('weather')}
-            >
-              <Cloud className="mr-2 h-4 w-4" />
-              {t.settings.weather}
-            </MenubarRadioItem>
-          </MenubarRadioGroup>
-        </MenubarContent>
-      </MenubarMenu>
+      {/* Theme Menu */}
+      <div className="relative">
+        <button 
+          onClick={() => setThemeMenuOpen(!themeMenuOpen)}
+          className="px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-colors"
+        >
+          Theme
+        </button>
+        {themeMenuOpen && (
+          <div className="absolute top-full left-0 mt-2 w-40 bg-white/95 backdrop-blur-md border border-white/20 rounded-xl shadow-xl z-50">
+            <div className="p-2 text-gray-900">
+              <button
+                onClick={() => {
+                  setTheme('light')
+                  setThemeMenuOpen(false)
+                }}
+                className="w-full flex items-center gap-2 p-2 hover:bg-blue-50 rounded-lg text-left"
+              >
+                <Sun className="w-4 h-4" />
+                <span>Light</span>
+              </button>
+              <button
+                onClick={() => {
+                  setTheme('dark')
+                  setThemeMenuOpen(false)
+                }}
+                className="w-full flex items-center gap-2 p-2 hover:bg-blue-50 rounded-lg text-left"
+              >
+                <Moon className="w-4 h-4" />
+                <span>Dark</span>
+              </button>
+              <button
+                onClick={() => {
+                  setTheme('system')
+                  setThemeMenuOpen(false)
+                }}
+                className="w-full flex items-center gap-2 p-2 hover:bg-blue-50 rounded-lg text-left"
+              >
+                <Monitor className="w-4 h-4" />
+                <span>System</span>
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
-      <MenubarMenu>
-        <MenubarTrigger className="text-white hover:bg-white/20">
-          <Languages className="mr-2 h-4 w-4" />
-          {t.navigation.language}
-        </MenubarTrigger>
-        <MenubarContent className="glass-effect border-white/20 bg-white/10">
-          <MenubarRadioGroup value={language}>
-            <MenubarRadioItem 
-              value="tr" 
-              className="text-white hover:bg-white/20"
-              onClick={() => setLanguage('tr')}
-            >
-              {t.settings.turkish}
-            </MenubarRadioItem>
-            <MenubarRadioItem 
-              value="en" 
-              className="text-white hover:bg-white/20"
-              onClick={() => setLanguage('en')}
-            >
-              {t.settings.english}
-            </MenubarRadioItem>
-          </MenubarRadioGroup>
-        </MenubarContent>
-      </MenubarMenu>
-    </Menubar>
+      {/* Language Menu */}
+      <div className="relative">
+        <button 
+          onClick={() => setLanguageMenuOpen(!languageMenuOpen)}
+          className="px-3 py-2 text-white hover:bg-white/20 rounded-lg transition-colors flex items-center gap-2"
+        >
+          <Languages className="w-4 h-4" />
+          Language
+        </button>
+        {languageMenuOpen && (
+          <div className="absolute top-full left-0 mt-2 w-32 bg-white/95 backdrop-blur-md border border-white/20 rounded-xl shadow-xl z-50">
+            <div className="p-2 text-gray-900">
+              <button
+                onClick={() => {
+                  setLanguage('tr')
+                  setLanguageMenuOpen(false)
+                }}
+                className="w-full p-2 hover:bg-blue-50 rounded-lg text-left"
+              >
+                Türkçe
+              </button>
+              <button
+                onClick={() => {
+                  setLanguage('en')
+                  setLanguageMenuOpen(false)
+                }}
+                className="w-full p-2 hover:bg-blue-50 rounded-lg text-left"
+              >
+                English
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   )
 }

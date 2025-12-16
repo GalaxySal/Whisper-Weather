@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { AlertTriangle, X, Shield, ExternalLink } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 
 interface SecurityAlertProps {
   onClose: () => void
@@ -52,45 +51,37 @@ export function SecurityAlert({ onClose }: SecurityAlertProps) {
             </p>
             
             <div className="flex flex-wrap items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-6 text-xs border-yellow-300 text-yellow-700 hover:bg-yellow-100 dark:border-yellow-700 dark:text-yellow-300 dark:hover:bg-yellow-900/30"
+              <button
+                className="inline-flex items-center px-2 py-1 text-xs border border-yellow-300 text-yellow-700 hover:bg-yellow-100 dark:border-yellow-700 dark:text-yellow-300 dark:hover:bg-yellow-900/30 rounded transition-colors"
                 onClick={() => window.open('https://redguard.com.tr/blog/cve-2025-55182-react2shell', '_blank')}
               >
                 <ExternalLink className="h-3 w-3 mr-1" />
                 RedGuard
-              </Button>
+              </button>
               
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-6 text-xs border-yellow-300 text-yellow-700 hover:bg-yellow-100 dark:border-yellow-700 dark:text-yellow-300 dark:hover:bg-yellow-900/30"
+              <button
+                className="inline-flex items-center px-2 py-1 text-xs border border-yellow-300 text-yellow-700 hover:bg-yellow-100 dark:border-yellow-700 dark:text-yellow-300 dark:hover:bg-yellow-900/30 rounded transition-colors"
                 onClick={() => window.open('https://www.wiz.io/blog/critical-vulnerability-in-react-cve-2025-55182', '_blank')}
               >
                 <ExternalLink className="h-3 w-3 mr-1" />
                 Wiz.io
-              </Button>
+              </button>
               
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 text-xs text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-200"
+              <button
+                className="inline-flex items-center px-2 py-1 text-xs text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-200 rounded transition-colors"
                 onClick={handleClose}
               >
                 Anladım
-              </Button>
+              </button>
             </div>
           </div>
           
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0 text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-200"
+          <button
+            className="inline-flex items-center justify-center h-6 w-6 text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-200 rounded transition-colors"
             onClick={handleClose}
           >
             <X className="h-4 w-4" />
-          </Button>
+          </button>
         </div>
       </div>
     </div>

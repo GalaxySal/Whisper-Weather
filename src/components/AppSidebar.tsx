@@ -1,228 +1,115 @@
-import { Moon, Sun, Monitor, Cloud, Languages, Home, User, Settings, Info, Cpu, Globe, Bug, BarChart3, Zap } from 'lucide-react'
-import { useTheme } from '@/hooks/use-theme'
-import { useLanguage } from '@/hooks/use-language'
-import { translations } from '@/lib/translations'
-import { TunnelStatus } from '@/components/TunnelStatus'
-import { isTauri } from '@/lib/platform'
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarTrigger,
-} from '@/components/ui/sidebar'
+import { Home, Settings, Info, BarChart3, Download, Gamepad2 } from 'lucide-react'
+import { useTranslation } from '../hooks/use-translation'
+import { toast } from 'sonner'
 
 interface AppSidebarProps {
-  currentPage: string
-  onPageChange: (page: string) => void
+  currentPage: 'home' | 'settings' | 'about' | 'updates' | 'explorer' | 'zentaira'
+  onPageChange: (page: 'home' | 'settings' | 'about' | 'updates' | 'explorer' | 'zentaira') => void
 }
 
 export default function AppSidebar({ currentPage, onPageChange }: AppSidebarProps) {
-  const { theme, setTheme } = useTheme()
-  const { language, setLanguage } = useLanguage()
-  const t = translations[language]
-
+  const { t, language } = useTranslation()
+  
+  const handleNavigation = (page: 'home' | 'settings' | 'about' | 'updates' | 'explorer' | 'zentaira') => {
+    onPageChange(page)
+    
+    // Toast bildirimleri
+    const messages = {
+      home: language === 'tr' ? 'Ana sayfa' : 'Home',
+      settings: language === 'tr' ? 'Ayarlar' : 'Settings',
+      about: language === 'tr' ? 'Hakkında' : 'About',
+      updates: language === 'tr' ? 'Güncellemeler' : 'Updates',
+      explorer: language === 'tr' ? 'Keşif Merkezi' : 'Weather Explorer',
+      zentaira: language === 'tr' ? 'Zentaira' : 'Zentaira'
+    }
+    
+    toast.info(messages[page], {
+      description: language === 'tr' ? `${messages[page]} sayfasına gidiliyor` : `Navigating to ${messages[page]}`,
+      duration: 2000,
+      position: 'bottom-right'
+    })
+  }
   return (
-    <Sidebar collapsible="icon" variant="inset">
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg">
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <Home className="size-4" />
-              </div>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">
-                  {t.navigation.home}
-                </span>
-                <span className="truncate text-xs">Whisper Weather</span>
-              </div>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarTrigger className="p-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-white hover:bg-white/20 transition-all" />
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-      
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>{t.navigation.home}</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  isActive={currentPage === 'home'}
-                  onClick={() => onPageChange('home')}
-                >
-                  <Home />
-                  <span>{t.navigation.home}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  isActive={currentPage === 'profile'}
-                  onClick={() => onPageChange('profile')}
-                >
-                  <User />
-                  <span>{t.navigation.profile}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  isActive={currentPage === 'settings'}
-                  onClick={() => onPageChange('settings')}
-                >
-                  <Settings />
-                  <span>{t.navigation.settings}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  isActive={currentPage === 'about'}
-                  onClick={() => onPageChange('about')}
-                >
-                  <Info />
-                  <span>{t.about.title}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  isActive={currentPage === 'system'}
-                  onClick={() => onPageChange('system')}
-                >
-                  <Cpu />
-                  <span>{t.command.systemResources}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  isActive={currentPage === 'zentaira'}
-                  onClick={() => onPageChange('zentaira')}
-                >
-                  <Globe />
-                  <span>Zentaira</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  isActive={currentPage === 'explorer'}
-                  onClick={() => onPageChange('explorer')}
-                >
-                  <BarChart3 />
-                  <span>Weather Explorer</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  isActive={currentPage === 'bugreport'}
-                  onClick={() => onPageChange('bugreport')}
-                >
-                  <Bug />
-                  <span>{t.command.bugReport}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  isActive={currentPage === 'updates'}
-                  onClick={() => onPageChange('updates')}
-                >
-                  <Zap />
-                  <span>Updates</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+    <div className="flex flex-col items-center py-4 space-y-4">
+      {/* Logo */}
+      <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+        <Home className="w-5 h-5 text-white" />
+      </div>
 
-        <SidebarGroup>
-          <SidebarGroupLabel>{t.navigation.theme}</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  isActive={theme === 'light'}
-                  onClick={() => setTheme('light')}
-                >
-                  <Sun />
-                  <span>{t.settings.light}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  isActive={theme === 'dark'}
-                  onClick={() => setTheme('dark')}
-                >
-                  <Moon />
-                  <span>{t.settings.dark}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  isActive={theme === 'system'}
-                  onClick={() => setTheme('system')}
-                >
-                  <Monitor />
-                  <span>{t.settings.system}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  isActive={theme === 'weather'}
-                  onClick={() => setTheme('weather')}
-                >
-                  <Cloud />
-                  <span>{t.settings.weather}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+      {/* Navigation */}
+      <nav className="flex flex-col space-y-2">
+        <button
+          className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+            currentPage === 'home' 
+              ? 'bg-white/20 text-white' 
+              : 'text-white/60 hover:bg-white/10 hover:text-white'
+          }`}
+          onClick={() => handleNavigation('home')}
+          title={t('home')}
+        >
+          <Home className="w-4 h-4" />
+        </button>
 
-        <SidebarGroup>
-          <SidebarGroupLabel>{t.navigation.language}</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  isActive={language === 'tr'}
-                  onClick={() => setLanguage('tr')}
-                >
-                  <Languages />
-                  <span>{t.settings.turkish}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  isActive={language === 'en'}
-                  onClick={() => setLanguage('en')}
-                >
-                  <Languages />
-                  <span>{t.settings.english}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
+        <button
+          className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+            currentPage === 'explorer' 
+              ? 'bg-white/20 text-white' 
+              : 'text-white/60 hover:bg-white/10 hover:text-white'
+          }`}
+          onClick={() => handleNavigation('explorer')}
+          title={t('weatherExplorer')}
+        >
+          <BarChart3 className="w-4 h-4" />
+        </button>
 
-      <SidebarFooter>
-        <SidebarMenu>
-          {isTauri() && (
-            <SidebarMenuItem>
-              <div className="px-2 py-1">
-                <TunnelStatus />
-              </div>
-            </SidebarMenuItem>
-          )}
-        </SidebarMenu>
-      </SidebarFooter>
-      </Sidebar>
+        <button
+          className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+            currentPage === 'updates' 
+              ? 'bg-white/20 text-white' 
+              : 'text-white/60 hover:bg-white/10 hover:text-white'
+          }`}
+          onClick={() => handleNavigation('updates')}
+          title={t('updates')}
+        >
+          <Download className="w-4 h-4" />
+        </button>
+
+        <button
+          className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+            currentPage === 'zentaira' 
+              ? 'bg-white/20 text-white' 
+              : 'text-white/60 hover:bg-white/10 hover:text-white'
+          }`}
+          onClick={() => handleNavigation('zentaira')}
+          title="Zentaira"
+        >
+          <Gamepad2 className="w-4 h-4" />
+        </button>
+
+        <button
+          className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+            currentPage === 'settings' 
+              ? 'bg-white/20 text-white' 
+              : 'text-white/60 hover:bg-white/10 hover:text-white'
+          }`}
+          onClick={() => handleNavigation('settings')}
+          title={t('settings')}
+        >
+          <Settings className="w-4 h-4" />
+        </button>
+
+        <button
+          className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+            currentPage === 'about' 
+              ? 'bg-white/20 text-white' 
+              : 'text-white/60 hover:bg-white/10 hover:text-white'
+          }`}
+          onClick={() => handleNavigation('about')}
+          title={t('about')}
+        >
+          <Info className="w-4 h-4" />
+        </button>
+      </nav>
+    </div>
   )
 }

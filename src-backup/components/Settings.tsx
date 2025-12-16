@@ -15,9 +15,6 @@ export default function Settings() {
   const [isEditingFavorites, setIsEditingFavorites] = useState(false)
   const [newCity, setNewCity] = useState('')
   const [showUserId, setShowUserId] = useState(false)
-  
-  // Debug için
-  console.log('Current newCity state:', newCity)
 
   // ID'yi güvenli bir şekilde maskela
   const maskUserId = (userId: string) => {
@@ -200,8 +197,7 @@ export default function Settings() {
                 <div className="space-y-3">
                   <div className="flex gap-2">
                     <PlacesAutocomplete
-                      onPlaceSelect={(city: string) => {
-                        console.log('PlacesAutocomplete onPlaceSelect called with:', city)
+                      onPlaceSelect={(city) => {
                         setNewCity(city)
                       }}
                       placeholder={t.settings.addCity}
@@ -209,14 +205,9 @@ export default function Settings() {
                     />
                     <Button
                       onClick={() => {
-                        console.log('Adding favorite:', newCity)
-                        console.log('Current favorites:', favorites)
                         if (newCity && !favorites.includes(newCity)) {
                           addFavorite(newCity)
                           setNewCity('')
-                          console.log('Favorite added successfully')
-                        } else {
-                          console.log('Favorite not added - empty or already exists')
                         }
                       }}
                       size="sm"

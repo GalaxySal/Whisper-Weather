@@ -236,19 +236,8 @@ jobs:
         # Build frontend first
         npm run build
         
-        # Build iOS directly with xcodebuild for simulator
-        xcodebuild -allowProvisioningUpdates \
-          -scheme whisper-weather-app_iOS \
-          -workspace gen/apple/whisper-weather-app.xcodeproj/project.xcworkspace/ \
-          -sdk iphonesimulator \
-          -configuration release \
-          -destination 'platform=iOS Simulator,name=iPhone 16' \
-          CODE_SIGNING_ALLOWED=NO \
-          CODE_SIGN_IDENTITY="" \
-          DEVELOPMENT_TEAM="" \
-          PROVISIONING_PROFILE="" \
-          CODE_SIGNING_REQUIRED=NO \
-          CODE_SIGN_ENTITLEMENTS=""
+        # Build iOS with Tauri CLI for iPhone 16 simulator
+        cargo tauri ios build --target aarch64-apple-ios --verbose --simulator --device "iPhone 16"
         
     - name: Upload iOS artifacts
       uses: actions/upload-artifact@v4

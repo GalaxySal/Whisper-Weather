@@ -1,10 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Download, CheckCircle, AlertCircle, RefreshCw, ExternalLink, Zap } from 'lucide-react'
-import { useLanguage } from '@/hooks/use-language'
+import { useTranslation } from '../hooks/use-translation'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import { MotionItem } from '@/components/ui/motion'
-import { useTauri } from '@/hooks/use-tauri'
 
 interface ReleaseInfo {
   tag_name: string
@@ -20,8 +17,7 @@ interface ReleaseInfo {
 }
 
 export default function Updates() {
-  const { language } = useLanguage()
-  const { isTauri } = useTauri()
+  const { t, language } = useTranslation()
   
   const [currentVersion, setCurrentVersion] = useState('1.0.3')
   const [latestRelease, setLatestRelease] = useState<ReleaseInfo | null>(null)
@@ -33,6 +29,8 @@ export default function Updates() {
 
   // Mevcut version'u al
   useEffect(() => {
+    const isTauri = typeof window !== 'undefined' && (window as any).__TAURI__ !== undefined
+    
     if (isTauri) {
       // Tauri için sabit version
       setCurrentVersion('1.0.3')
@@ -46,7 +44,7 @@ export default function Updates() {
     if (lastCheck) {
       setLastChecked(new Date(lastCheck))
     }
-  }, [isTauri])
+  }, [])
 
   // Güncelleme kontrolü
   const checkForUpdates = async () => {
@@ -91,19 +89,19 @@ export default function Updates() {
         setUpdateAvailable(true)
         
         // Sessiz bildirim (kullanıcıyı rahatsız etmeyen)
-        toast.info('Yeni güncelleme mevcut!', {
-          description: `Versiyon ${latestRelease.tag_name} yayınlandı`,
+        toast.info(t('updateAvailable'), {
+          description: language === 'tr' ? `Versiyon ${latestRelease.tag_name} yayınlandı` : `Version ${latestRelease.tag_name} released`,
           duration: 5000,
           position: 'bottom-right',
           action: {
-            label: 'İndir',
+            label: t('download'),
             onClick: () => downloadUpdate()
           }
         })
       } else {
         setUpdateAvailable(false)
-        toast.success('Uygulama güncel!', {
-          description: `Mevcut sürümünüz: v${current} - En son sürüm`,
+        toast.success(t('upToDate'), {
+          description: language === 'tr' ? `Mevcut versiyon: v${current} - Son versiyon` : `Current version: v${current} - Latest version`,
           duration: 3000,
           position: 'bottom-right'
         })
@@ -115,9 +113,9 @@ export default function Updates() {
       localStorage.setItem('last-update-check', now.toISOString())
       
     } catch (error) {
-      console.error('Güncelleme kontrolü başarısız:', error)
-      toast.error('Güncelleme kontrolü başarısız', {
-        description: 'Lütfen internet bağlantınızı kontrol edin',
+      console.error('Update check failed:', error)
+      toast.error(language === 'tr' ? 'Güncelleme kontrolü başarısız' : 'Update check failed', {
+        description: language === 'tr' ? 'Lütfen internet bağlantınızı kontrol edin' : 'Please check your internet connection',
         duration: 4000,
         position: 'bottom-right'
       })
@@ -139,10 +137,11 @@ export default function Updates() {
     
     try {
       // Platforma uygun dosyayı bul
+      const isTauri = typeof window !== 'undefined' && (window as any).__TAURI__ !== undefined
       const asset = latestRelease.assets.find(asset => {
         if (isTauri) {
           // Platform detection
-          const platform = window.__TAURI__?.platform || 'unknown'
+          const platform = (window as any).__TAURI__?.platform || 'unknown'
           
           if (platform === 'win32') {
             return asset.name.includes('.exe') || asset.name.includes('windows')
@@ -162,8 +161,8 @@ export default function Updates() {
         console.log('No asset found, opening GitHub releases page')
         window.open('https://github.com/GalaxySal/Whisper-Weather/releases', '_blank')
         
-        toast.info('GitHub sayfası açıldı!', {
-          description: 'Tüm sürümleri görmek için releases sayfasını ziyaret edin',
+        toast.info(language === 'tr' ? 'GitHub sayfası açıldı!' : 'GitHub page opened!', {
+          description: language === 'tr' ? 'Tüm versiyonları görmek için releases sayfasını ziyaret edin' : 'Visit releases page to see all versions',
           duration: 3000,
           position: 'bottom-right'
         })
@@ -181,34 +180,32 @@ export default function Updates() {
           link.click()
           document.body.removeChild(link)
           
-          toast.success('İndirme başladı!', {
-            description: `${asset.name} indiriliyor...`,
-            duration: 3000,
+          toast.success(language === 'tr' ? 'İndirme başladı!' : 'Download started!', {
+            description: language === 'tr' ? `${asset.name} indiriliyor...` : `${asset.name} downloading...`,
+            duration: 4000,
             position: 'bottom-right'
           })
         } catch (error) {
-          console.error('İndirme başarısız:', error)
-          // Hata olursa GitHub sayfasına yönlendir
-          window.open(latestRelease.html_url, '_blank')
-          toast.error('İndirme başarısız!', {
-            description: 'GitHub sayfası açıldı',
-            duration: 3000,
+          console.error('Download failed:', error)
+          toast.error(language === 'tr' ? 'İndirme başarısız' : 'Download failed', {
+            description: language === 'tr' ? 'Lütfen tekrar deneyin veya GitHub releases sayfasını ziyaret edin' : 'Please try again or visit GitHub releases',
+            duration: 4000,
             position: 'bottom-right'
           })
-        }
+        }  
       } else {
         // Web için indirme yapma - sadece bilgi ver
-        toast.info('Web sürümü', {
-          description: 'Güncellemeler için GitHub sayfasını ziyaret edin',
+        toast.info(language === 'tr' ? 'Web versiyonu' : 'Web version', {
+          description: language === 'tr' ? 'Güncellemeler için GitHub\'ı ziyaret edin' : 'Visit GitHub for updates',
           duration: 3000,
           position: 'bottom-right'
         })
       }
       
     } catch (error) {
-      console.error('İndirme başarısız:', error)
-      toast.error('İndirme başarısız', {
-        description: 'Lütfen manuel olarak indirin',
+      console.error('Download failed:', error)
+      toast.error(language === 'tr' ? 'İndirme başarısız' : 'Download failed', {
+        description: language === 'tr' ? 'Lütfen daha sonra tekrar deneyin' : 'Please try again later',
         duration: 4000,
         position: 'bottom-right'
       })
@@ -222,7 +219,7 @@ export default function Updates() {
     if (buttonRef.current) {
       console.log('Button rendered:', buttonRef.current)
     } else {
-      console.log('Button not rendered')
+      console.log('Button ref is null')
     }
   }, [updateAvailable])
 
@@ -259,170 +256,166 @@ export default function Updates() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <MotionItem delay={0.1}>
-        <div className="glass-effect rounded-2xl p-8 text-white">
-          <h2 className="text-3xl font-bold mb-8 flex items-center">
-            <Zap className="w-8 h-8 mr-3 text-yellow-400" />
-            {language === 'tr' ? 'Güncellemeler' : 'Updates'}
-          </h2>
+      <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 text-white border border-white/20">
+        <h2 className="text-3xl font-bold mb-8 flex items-center">
+          <Zap className="w-8 h-8 mr-3 text-yellow-400" />
+          {t('updates')}
+        </h2>
 
-          {/* Mevcut Versiyon */}
-          <div className="mb-8">
-            <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
-              <h3 className="text-xl font-semibold mb-4">
-                {language === 'tr' ? 'Mevcut Versiyon' : 'Current Version'}
-              </h3>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center mr-4">
-                    <CheckCircle className="w-6 h-6 text-blue-400" />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold">v{currentVersion}</div>
-                    <div className="text-sm text-white/60">
-                      {isTauri ? 'Tauri App' : 'Web App'}
-                    </div>
+        {/* Mevcut Versiyon */}
+        <div className="mb-8">
+          <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
+            <h3 className="text-xl font-semibold mb-4">
+              {t('currentVersion')}
+            </h3>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center mr-4">
+                  <CheckCircle className="w-6 h-6 text-blue-400" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold">v{currentVersion}</div>
+                  <div className="text-sm text-white/60">
+                    {typeof window !== 'undefined' && (window as any).__TAURI__ ? 'Tauri App' : 'Web App'}
                   </div>
                 </div>
-                <Button
-                  onClick={checkForUpdates}
-                  disabled={isChecking}
-                  className="bg-white/20 hover:bg-white/30"
+              </div>
+              <button
+                onClick={checkForUpdates}
+                disabled={isChecking}
+                className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-white transition-colors"
+              >
+                {isChecking ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    {t('checking')}
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    {t('checkForUpdates')}
+                  </>
+                )}
+              </button>
+            </div>
+            {lastChecked && (
+              <div className="text-sm text-white/60 mt-3">
+                {t('lastChecked')}: {lastChecked.toLocaleString()}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Güncelleme Durumu */}
+        {latestRelease && (
+          <div className={`rounded-xl p-6 border ${
+            updateAvailable 
+              ? 'bg-green-500/10 border-green-500/30' 
+              : 'bg-white/10 border-white/20'
+          }`}>
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center">
+                {updateAvailable ? (
+                  <AlertCircle className="w-6 h-6 text-green-400 mr-3" />
+                ) : (
+                  <CheckCircle className="w-6 h-6 text-blue-400 mr-3" />
+                )}
+                <div>
+                  <h3 className="text-xl font-semibold">
+                    {updateAvailable 
+                      ? t('updateAvailable')
+                      : t('upToDate')
+                    }
+                  </h3>
+                  <div className="text-lg font-medium mt-1">
+                    {latestRelease.tag_name !== 'dev' ? latestRelease.tag_name : t('currentVersion')}
+                  </div>
+                </div>
+              </div>
+              <div className="text-sm text-white/60">
+                {formatDate(latestRelease.published_at)}
+              </div>
+            </div>
+
+            {/* Güncelleme Notları */}
+            {latestRelease.body && (
+              <div className="mb-6">
+                <h4 className="font-semibold mb-3">
+                  {t('whatsNew')}
+                </h4>
+                <div className="bg-black/20 rounded-lg p-4 max-h-40 overflow-y-auto">
+                  <div 
+                    className="text-sm text-white/80 leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: formatChangelog(latestRelease.body) }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* İndirme Butonu */}
+            {updateAvailable && (
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-white/60">
+                  {latestRelease.assets.length > 0 && (
+                    <>
+                      {latestRelease.assets.length} {t('filesAvailable')}
+                      {latestRelease.assets[0] && (
+                        <span className="ml-2">
+                          ({formatFileSize(latestRelease.assets[0].size)})
+                        </span>
+                      )}
+                    </>
+                  )}
+                </div>
+                <button
+                  ref={buttonRef}
+                  onClick={() => {
+                    console.log('Button clicked!')
+                    downloadUpdate()
+                  }}
+                  disabled={isDownloading}
+                  className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
                 >
-                  {isChecking ? (
+                  {isDownloading ? (
                     <>
                       <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                      {language === 'tr' ? 'Kontrol Ediliyor...' : 'Checking...'}
+                      {t('downloading')}
                     </>
                   ) : (
                     <>
-                      <RefreshCw className="w-4 h-4 mr-2" />
-                      {language === 'tr' ? 'Güncelleme Kontrolü' : 'Check for Updates'}
+                      <Download className="w-4 h-4 mr-2" />
+                      {t('download')}
                     </>
                   )}
-                </Button>
+                </button>
               </div>
-              {lastChecked && (
-                <div className="text-sm text-white/60 mt-3">
-                  {language === 'tr' ? 'Son kontrol:' : 'Last checked:'} {lastChecked.toLocaleString()}
-                </div>
-              )}
-            </div>
+            )}
           </div>
+        )}
 
-          {/* Güncelleme Durumu */}
-          {latestRelease && (
-            <MotionItem delay={0.2}>
-              <div className={`rounded-xl p-6 border ${
-                updateAvailable 
-                  ? 'bg-green-500/10 border-green-500/30' 
-                  : 'bg-white/10 border-white/20'
-              }`}>
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center">
-                    {updateAvailable ? (
-                      <AlertCircle className="w-6 h-6 text-green-400 mr-3" />
-                    ) : (
-                      <CheckCircle className="w-6 h-6 text-blue-400 mr-3" />
-                    )}
-                    <div>
-                      <h3 className="text-xl font-semibold">
-                        {updateAvailable 
-                          ? (language === 'tr' ? 'Yeni Güncelleme Mevcut' : 'Update Available')
-                          : (language === 'tr' ? 'Güncelsiniz' : 'Up to Date')
-                        }
-                      </h3>
-                      <div className="text-lg font-medium mt-1">
-                        {latestRelease.tag_name !== 'dev' ? latestRelease.tag_name : (language === 'tr' ? 'Mevcut Sürüm' : 'Current Version')}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-sm text-white/60">
-                    {formatDate(latestRelease.published_at)}
-                  </div>
-                </div>
-
-                {/* Güncelleme Notları */}
-                {latestRelease.body && (
-                  <div className="mb-6">
-                    <h4 className="font-semibold mb-3">
-                      {language === 'tr' ? 'Yenilikler' : "What's New"}
-                    </h4>
-                    <div className="bg-black/20 rounded-lg p-4 max-h-40 overflow-y-auto">
-                      <div 
-                        className="text-sm text-white/80 leading-relaxed"
-                        dangerouslySetInnerHTML={{ __html: formatChangelog(latestRelease.body) }}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* İndirme Butonu */}
-                {updateAvailable && (
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-white/60">
-                      {latestRelease.assets.length > 0 && (
-                        <>
-                          {latestRelease.assets.length} {language === 'tr' ? 'dosya mevcut' : 'files available'}
-                          {latestRelease.assets[0] && (
-                            <span className="ml-2">
-                              ({formatFileSize(latestRelease.assets[0].size)})
-                            </span>
-                          )}
-                        </>
-                      )}
-                    </div>
-                    <Button
-                      ref={buttonRef}
-                      onClick={() => {
-                        console.log('Button clicked!')
-                        downloadUpdate()
-                      }}
-                      disabled={isDownloading}
-                      className="bg-green-500 hover:bg-green-600 text-white"
-                    >
-                      {isDownloading ? (
-                        <>
-                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                          {language === 'tr' ? 'İndiriliyor...' : 'Downloading...'}
-                        </>
-                      ) : (
-                        <>
-                          <Download className="w-4 h-4 mr-2" />
-                          {language === 'tr' ? 'İndir' : 'Download'}
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </MotionItem>
-          )}
-
-          {/* Debug Info */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mt-4 pt-4 border-t border-white/10 text-xs text-white/40">
-              <div>Debug Info:</div>
-              <div>updateAvailable: {updateAvailable.toString()}</div>
-              <div>latestRelease: {latestRelease ? latestRelease.tag_name : 'null'}</div>
-              <div>currentVersion: {currentVersion}</div>
-            </div>
-          )}
-
-          {/* GitHub Link */}
-          <div className="mt-6 text-center">
-            <a
-              href="https://github.com/GalaxySal/Whisper-Weather/releases"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center text-white/60 hover:text-white transition-colors"
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              {language === 'tr' ? 'GitHub\'da Tüm Sürümler' : 'All Releases on GitHub'}
-            </a>
+        {/* Debug Info */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mt-4 pt-4 border-t border-white/10 text-xs text-white/40">
+            <div>Debug Info:</div>
+            <div>updateAvailable: {updateAvailable.toString()}</div>
+            <div>latestRelease: {latestRelease ? latestRelease.tag_name : 'null'}</div>
+            <div>currentVersion: {currentVersion}</div>
           </div>
+        )}
+
+        {/* GitHub Link */}
+        <div className="mt-6 text-center">
+          <a
+            href="https://github.com/GalaxySal/Whisper-Weather/releases"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center text-white/60 hover:text-white transition-colors"
+          >
+            <ExternalLink className="w-4 h-4 mr-2" />
+            {t('allReleasesOnGitHub')}
+          </a>
         </div>
-      </MotionItem>
+      </div>
     </div>
   )
 }

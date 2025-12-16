@@ -1,31 +1,26 @@
 import { Heart } from 'lucide-react'
-import { useFavorites } from '@/hooks/use-favorites'
-import { Button } from '@/components/ui/button'
-import { toast } from 'sonner'
+import { useFavorites } from '../hooks/use-favorites'
 
 interface FavoriteButtonProps {
   city: string
+  className?: string
 }
 
-export default function FavoriteButton({ city }: FavoriteButtonProps) {
+export default function FavoriteButton({ city, className }: FavoriteButtonProps) {
   const { isFavorite, addFavorite, removeFavorite } = useFavorites()
 
   const toggleFavorite = () => {
     if (isFavorite(city)) {
       removeFavorite(city)
-      toast.error(`${city} favorilerden kaldırıldı`)
     } else {
       addFavorite(city)
-      toast.success(`${city} favorilere eklendi`)
     }
   }
 
   return (
-    <Button
-      variant="ghost"
-      size="icon"
+    <button
       onClick={toggleFavorite}
-      className="absolute right-2 top-1/2 transform -translate-y-1/2"
+      className={`p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors ${className || ''}`}
     >
       <Heart 
         className={`w-5 h-5 transition-colors ${
@@ -34,6 +29,6 @@ export default function FavoriteButton({ city }: FavoriteButtonProps) {
             : 'text-white/60 hover:text-red-500'
         }`} 
       />
-    </Button>
+    </button>
   )
 }

@@ -14,7 +14,7 @@ class CloudflareService {
     lastCheck: new Date()
   };
   
-  private healthCheckInterval: NodeJS.Timeout | null = null;
+  private healthCheckInterval: any = null;
   private readonly HEALTH_CHECK_INTERVAL = 30000; // 30 seconds
 
   async initialize(): Promise<void> {

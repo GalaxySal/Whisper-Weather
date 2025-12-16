@@ -1,5 +1,4 @@
 import { invoke } from '@tauri-apps/api/core';
-import { isTauri } from '@/lib/platform';
 
 export interface UpdateInfo {
   version: string;
@@ -9,7 +8,9 @@ export interface UpdateInfo {
 
 export class UpdaterService {
   async checkForUpdates(): Promise<string | null> {
-    if (!isTauri()) return null;
+    const isTauri = typeof window !== 'undefined' && (window as any).__TAURI__ !== undefined;
+    
+    if (!isTauri) return null;
     
     try {
       const result = await invoke<string | null>('check_for_updates');
@@ -21,7 +22,9 @@ export class UpdaterService {
   }
 
   async installUpdate(): Promise<string> {
-    if (!isTauri()) {
+    const isTauri = typeof window !== 'undefined' && (window as any).__TAURI__ !== undefined;
+    
+    if (!isTauri) {
       throw new Error('Updater not available in browser');
     }
     
@@ -36,7 +39,8 @@ export class UpdaterService {
 
   // Auto updater runs in background, this is just for manual checks
   async isAutoUpdaterEnabled(): Promise<boolean> {
-    return isTauri();
+    const isTauri = typeof window !== 'undefined' && (window as any).__TAURI__ !== undefined;
+    return isTauri;
   }
 }
 

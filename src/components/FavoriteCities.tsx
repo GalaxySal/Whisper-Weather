@@ -1,21 +1,17 @@
 import { MapPin, X } from 'lucide-react'
-import { useFavorites } from '@/hooks/use-favorites'
-import { useLanguage } from '@/hooks/use-language'
-import { translations } from '@/lib/translations'
+import { useFavorites } from '../hooks/use-favorites'
 
 export default function FavoriteCities({ onSelectCity }: { onSelectCity: (city: string) => void }) {
   const { favorites, removeFavorite } = useFavorites()
-  const { language } = useLanguage()
-  const t = translations[language]
 
   if (favorites.length === 0) return null
 
   return (
     <div className="max-w-lg mx-auto mb-6">
-      <div className="glass-effect rounded-2xl p-4 text-white">
+      <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 text-white border border-white/20">
         <h3 className="text-lg font-semibold mb-3 flex items-center">
           <MapPin className="w-4 h-4 mr-2" />
-          {t.weather.favoriteCities}
+          Favorite Cities
         </h3>
         <div className="flex flex-wrap gap-2">
           {favorites.map(city => (

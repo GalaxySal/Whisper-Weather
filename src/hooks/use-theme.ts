@@ -1,143 +1,188 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useTauri } from './use-tauri'
-import { listen } from '@tauri-apps/api/event'
 
-type Theme = 'light' | 'dark' | 'system' | 'weather'
+type Theme = 'light' | 'dark' | 'system'
 
 export function useTheme() {
   const [theme, setTheme] = useState<Theme>('system')
-  const [isThemeReady, setIsThemeReady] = useState(false)
-  const { saveSettings, loadSettings, getSystemTheme } = useTauri()
+  const [systemTheme, setSystemTheme] = useState<'light' | 'dark'>('light')
+  const { saveSettings, loadSettings } = useTauri()
 
-  // İlk yükleme - Tauri backend'den yükle
+  // Check system theme
+  const checkSystemTheme = useCallback(() => {
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)')
+      setSystemTheme(darkModeQuery.matches ? 'dark' : 'light')
+      
+      // Listen for system theme changes
+      const handleChange = (e: MediaQueryListEvent) => {
+        setSystemTheme(e.matches ? 'dark' : 'light')
+      }
+      
+      darkModeQuery.addEventListener('change', handleChange)
+      return () => darkModeQuery.removeEventListener('change', handleChange)
+    }
+  }, [])
+
+  // Load theme from settings
   const loadTheme = useCallback(async () => {
     try {
-      const settings = await loadSettings()
-      const savedTheme = settings.theme || 'system'
-      setTheme(savedTheme)
+      // Check if we're in Tauri environment
+      const isTauri = typeof window !== 'undefined' && (window as any).__TAURI__
       
-      // Sistem teması ise önce al sonra uygula
-      if (savedTheme === 'system') {
-        const systemTheme = await getSystemTheme()
-        applyTheme(systemTheme === 'dark' ? 'dark' : 'light')
+      if (isTauri) {
+        const settings = await loadSettings()
+        const savedTheme = settings.theme || 'system'
+        setTheme(savedTheme)
       } else {
-        applyTheme(savedTheme)
+        // Web environment - use localStorage
+        const savedTheme = localStorage.getItem('theme') as Theme || 'system'
+        setTheme(savedTheme)
+      }
+    } catch (error) {
+      console.error('Error loading theme:', error)
+      // Fallback to system theme
+      setTheme('system')
+    }
+  }, [loadSettings])
+
+  // Save theme
+  const saveTheme = useCallback(async (newTheme: Theme) => {
+    try {
+      const isTauri = typeof window !== 'undefined' && (window as any).__TAURI__
+      
+      if (isTauri) {
+        const settings = await loadSettings()
+        await saveSettings(settings.language || 'tr', newTheme)
+      } else {
+        // Web environment - use localStorage
+        localStorage.setItem('theme', newTheme)
       }
       
-      setIsThemeReady(true)
+      setTheme(newTheme)
     } catch (error) {
-      console.error('Error loading theme from Tauri:', error)
-      setIsThemeReady(true)
+      console.error('Error saving theme:', error)
+      // Still update local state even if save fails
+      setTheme(newTheme)
     }
-  }, [loadSettings, getSystemTheme])
+  }, [loadSettings, saveSettings])
 
-  useEffect(() => {
-    loadTheme()
-  }, [loadTheme])
-
-  const applyTheme = (themeValue: Theme) => {
-    const root = window.document.documentElement
-    root.classList.remove('light', 'dark', 'weather')
-    root.classList.add(themeValue)
-  }
-
-  // Hava durumuna göre tema uygula
-  const applyWeatherTheme = (weatherCondition: string, temperature: number) => {
-    const root = window.document.documentElement
-    
-    // Önce mevcut weather class'larını temizle
-    root.classList.remove(
-      'weather-clear', 'weather-clouds', 'weather-rain', 'weather-snow', 
-      'weather-thunderstorm', 'weather-drizzle', 'weather-mist', 
-      'weather-fog', 'weather-haze', 'weather-hot', 'weather-cold'
-    )
-    
-    // Hava durumuna göre class ekle
-    const normalizedCondition = weatherCondition.toLowerCase()
-    
-    // Sıcaklığa göre sınıflandırma
-    if (temperature >= 30) {
-      root.classList.add('weather-hot')
-    } else if (temperature <= 5) {
-      root.classList.add('weather-cold')
+  // Get current active theme
+  const getCurrentTheme = useCallback(() => {
+    if (theme === 'system') {
+      return systemTheme
     }
+    return theme
+  }, [theme, systemTheme])
+
+  // Apply theme to document
+  const applyTheme = useCallback(() => {
+    const currentTheme = getCurrentTheme()
+    const root = document.documentElement
     
-    // Hava durumuna göre sınıflandırma
-    if (normalizedCondition.includes('clear') || normalizedCondition.includes('sunny') || normalizedCondition.includes('açık')) {
-      root.classList.add('weather-clear')
-    } else if (normalizedCondition.includes('cloud') || normalizedCondition.includes('bulut') || normalizedCondition.includes('kapalı') || normalizedCondition.includes('parçalı')) {
-      root.classList.add('weather-clouds')
-    } else if (normalizedCondition.includes('rain') || normalizedCondition.includes('yağmur') || normalizedCondition.includes('yağış') || normalizedCondition.includes('sağanak')) {
-      root.classList.add('weather-rain')
-    } else if (normalizedCondition.includes('snow') || normalizedCondition.includes('kar')) {
-      root.classList.add('weather-snow')
-    } else if (normalizedCondition.includes('thunderstorm') || normalizedCondition.includes('fırtına') || normalizedCondition.includes('gök gürültülü')) {
-      root.classList.add('weather-thunderstorm')
-    } else if (normalizedCondition.includes('drizzle') || normalizedCondition.includes('çiseley') || normalizedCondition.includes('çiseleme')) {
-      root.classList.add('weather-drizzle')
-    } else if (normalizedCondition.includes('mist') || normalizedCondition.includes('sis') || normalizedCondition.includes('sisli')) {
-      root.classList.add('weather-mist')
-    } else if (normalizedCondition.includes('fog') || normalizedCondition.includes('pus') || normalizedCondition.includes('puslu')) {
-      root.classList.add('weather-fog')
-    } else if (normalizedCondition.includes('haze') || normalizedCondition.includes('duman')) {
-      root.classList.add('weather-haze')
+    if (currentTheme === 'dark') {
+      root.classList.add('dark')
+      root.classList.remove('light')
     } else {
-      // Bilinmeyen durum için varsayılan
-      root.classList.add('weather-clouds')
+      root.classList.add('light')
+      root.classList.remove('dark')
     }
-  }
+    
+    // Force Tailwind to update in Tauri environment
+    if (typeof window !== 'undefined') {
+      // Add a data attribute for additional theme tracking
+      root.setAttribute('data-theme', currentTheme)
+      
+      // Trigger a reflow to ensure Tailwind updates
+      void root.offsetWidth
+    }
+  }, [getCurrentTheme])
 
-  // Tema değiştiğinde Tauri backend'e kaydet
-  const changeTheme = async (newTheme: Theme) => {
-    setTheme(newTheme)
+  // Listen for Rust-triggered theme changes
+  const listenToRustThemeChanges = useCallback(() => {
+    const isTauri = typeof window !== 'undefined' && (window as any).__TAURI__
     
-    if (newTheme === 'system') {
-      const systemTheme = await getSystemTheme()
-      applyTheme(systemTheme === 'dark' ? 'dark' : 'light')
-    } else {
-      applyTheme(newTheme)
+    if (isTauri) {
+      const { listen } = (window as any).__TAURI__.event
+      
+      // Listen for system theme changes from Rust
+      const unlisten = listen('system-theme-changed', (event: any) => {
+        const rustSystemTheme = event.payload as 'light' | 'dark'
+        setSystemTheme(rustSystemTheme)
+      })
+      
+      return unlisten
     }
     
-    try {
-      const settings = await loadSettings()
-      await saveSettings(settings.language || 'tr', newTheme)
-    } catch (error) {
-      console.error('Error saving theme to Tauri:', error)
-    }
-  }
+    return () => {} // No-op for web environment
+  }, [])
 
-  // Sistem teması değişikliklerini dinle
-  useEffect(() => {
-    let unlisten: (() => void) | null = null;
+  // Get weather-based gradient
+  const getWeatherGradient = useCallback((weatherMain?: string) => {
+    const currentTheme = getCurrentTheme()
     
-    const setupListener = async () => {
-      try {
-        // Only setup listener if we're in Tauri environment
-        if (window.__TAURI__) {
-          unlisten = await listen<string>('system-theme-changed', (event) => {
-            const newSystemTheme = event.payload
-            if (theme === 'system') {
-              applyTheme(newSystemTheme === 'dark' ? 'dark' : 'light')
-            }
-          })
-        }
-      } catch (error) {
-        console.warn('Failed to setup system theme listener:', error)
+    if (weatherMain) {
+      switch (weatherMain.toLowerCase()) {
+        case 'clear':
+          return currentTheme === 'dark' 
+            ? 'from-slate-900 via-slate-800 to-slate-900'
+            : 'from-blue-400 via-blue-500 to-blue-600'
+        case 'clouds':
+          return currentTheme === 'dark'
+            ? 'from-gray-900 via-gray-800 to-gray-900'
+            : 'from-gray-400 via-gray-500 to-gray-600'
+        case 'rain':
+        case 'drizzle':
+          return currentTheme === 'dark'
+            ? 'from-slate-800 via-slate-700 to-slate-800'
+            : 'from-gray-500 via-gray-600 to-gray-700'
+        case 'snow':
+          return currentTheme === 'dark'
+            ? 'from-slate-700 via-slate-600 to-slate-700'
+            : 'from-gray-200 via-gray-300 to-gray-400'
+        case 'thunderstorm':
+          return currentTheme === 'dark'
+            ? 'from-purple-900 via-purple-800 to-purple-900'
+            : 'from-purple-600 via-purple-700 to-purple-800'
+        case 'mist':
+        case 'fog':
+          return currentTheme === 'dark'
+            ? 'from-gray-800 via-gray-700 to-gray-800'
+            : 'from-gray-300 via-gray-400 to-gray-500'
+        default:
+          return currentTheme === 'dark'
+            ? 'from-slate-900 via-slate-800 to-slate-900'
+            : 'from-blue-400 via-blue-500 to-blue-600'
       }
     }
     
-    setupListener()
+    // Default gradients
+    return currentTheme === 'dark'
+      ? 'from-slate-900 via-slate-800 to-slate-900'
+      : 'from-blue-400 via-blue-500 to-blue-600'
+  }, [getCurrentTheme])
+
+  useEffect(() => {
+    checkSystemTheme()
+    loadTheme()
+    
+    // Set up Rust theme change listener
+    const unlisten = listenToRustThemeChanges()
     
     return () => {
-      if (unlisten) {
-        try {
-          unlisten()
-        } catch (error) {
-          console.warn('Failed to cleanup system theme listener:', error)
-        }
-      }
+      unlisten()
     }
-  }, [theme])
+  }, [])
 
-  return { theme, setTheme: changeTheme, isThemeReady, applyWeatherTheme }
+  useEffect(() => {
+    applyTheme()
+  }, [theme, systemTheme])
+
+  return {
+    theme,
+    systemTheme,
+    setTheme: saveTheme,
+    getCurrentTheme,
+    getWeatherGradient
+  }
 }

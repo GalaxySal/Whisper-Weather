@@ -1,5 +1,4 @@
 import { invoke } from '@tauri-apps/api/core';
-import { toast } from 'sonner';
 
 export interface LoginRequest {
   email: string;
@@ -43,16 +42,16 @@ class AuthService {
 
       if (response.success) {
         this.clearFailedAttempts(request.email);
-        toast.success(response.message);
+        console.log('Login successful');
       } else if (response.requiresCaptcha) {
         this.recordFailedAttempt(request.email);
-        toast.warning('Additional verification required');
+        console.log('CAPTCHA required');
       }
 
       return response;
     } catch (error) {
       this.recordFailedAttempt(request.email);
-      toast.error('Login failed');
+      console.error('Login failed:', error);
       throw error;
     }
   }

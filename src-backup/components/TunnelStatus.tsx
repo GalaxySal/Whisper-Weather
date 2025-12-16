@@ -8,23 +8,18 @@ import { toast } from 'sonner';
 import { isTauri } from '@/lib/platform';
 
 const TunnelStatusComponent: React.FC = () => {
-  const [status, setStatus] = useState<TunnelStatusType | null>(null);
+  const [status, setStatus] = useState<'connected' | 'disconnected' | 'error'>('disconnected');
+  const [isOnline, setIsOnline] = useState(false);
   const [lastAlertTime, setLastAlertTime] = useState<number>(0);
   const { language } = useLanguage();
   const t = translations[language];
   const ALERT_COOLDOWN = 30000; // 30 seconds between alerts
 
-  console.log('TunnelStatus rendering, isTauri:', isTauri());
-  console.log('window.__TAURI__:', typeof window !== 'undefined' ? window.__TAURI__ : 'window not defined');
-
   useEffect(() => {
     // Only show tunnel status in Tauri
     if (!isTauri()) {
-      console.log('Not Tauri, skipping tunnel status');
       return;
     }
-
-    console.log('Tauri detected, setting up tunnel status');
 
     const setupTunnel = async () => {
       try {
@@ -33,7 +28,6 @@ const TunnelStatusComponent: React.FC = () => {
         
         const updateStatus = () => {
           const currentStatus = tunnelService.getCurrentStatus();
-          console.log('Tunnel status update:', currentStatus);
           setStatus(currentStatus);
           
           // Check for slow connection and show toast
@@ -44,8 +38,8 @@ const TunnelStatusComponent: React.FC = () => {
                 description: `${t.tunnel.responseTime}: ${currentStatus.response_time_ms}ms\n${t.tunnel.description}`,
                 duration: 5000,
                 action: {
-                  label: 'OK',
-                  onClick: () => console.log('Alert dismissed'),
+                  label: 'Dismiss',
+                  onClick: () => {},
                 },
               });
               setLastAlertTime(now);

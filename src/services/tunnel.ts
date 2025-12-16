@@ -26,7 +26,7 @@ export enum TunnelMode {
 class TunnelService {
   private config: TunnelConfig | null = null;
   private status: TunnelStatus | null = null;
-  private healthCheckInterval: NodeJS.Timeout | null = null;
+  private healthCheckInterval: any = null;
   private readonly HEALTH_CHECK_INTERVAL = 30000; // 30 seconds
 
   async initialize(): Promise<void> {
@@ -129,7 +129,7 @@ class TunnelService {
     const port = this.config?.target_port || 1420;
     
     // In production Tauri, use tauri://localhost for API calls
-    if (typeof window !== 'undefined' && window.__TAURI__) {
+    if (typeof window !== 'undefined' && (window as any).__TAURI__) {
       return 'tauri://localhost/api';
     }
     
@@ -142,7 +142,7 @@ class TunnelService {
     const port = this.config?.target_port || 1420;
     
     // In production Tauri, use tauri://localhost for API calls
-    if (typeof window !== 'undefined' && window.__TAURI__) {
+    if (typeof window !== 'undefined' && (window as any).__TAURI__) {
       return 'tauri://localhost/api/weather';
     }
     
@@ -155,7 +155,7 @@ class TunnelService {
     const port = this.config?.target_port || 1420;
     
     // In production Tauri, use tauri://localhost for API calls
-    if (typeof window !== 'undefined' && window.__TAURI__) {
+    if (typeof window !== 'undefined' && (window as any).__TAURI__) {
       return 'tauri://localhost/api/auth';
     }
     
@@ -170,7 +170,7 @@ class TunnelService {
     
     // In production Tauri, use tauri://localhost for API calls
     let fullUrl: string;
-    if (typeof window !== 'undefined' && window.__TAURI__) {
+    if (typeof window !== 'undefined' && (window as any).__TAURI__) {
       fullUrl = url.startsWith('http') || url.startsWith('tauri://') ? url : `tauri://localhost${url}`;
     } else {
       fullUrl = url.startsWith('http') ? url : `http://localhost:${port}${url}`;
@@ -186,7 +186,7 @@ class TunnelService {
         
         // Retry with fallback URL
         const fallbackUrl = url.startsWith('http') || url.startsWith('tauri://') ? url : 
-          (typeof window !== 'undefined' && window.__TAURI__ ? `tauri://localhost${url}` : `http://localhost:${port}${url}`);
+          (typeof window !== 'undefined' && (window as any).__TAURI__ ? `tauri://localhost${url}` : `http://localhost:${port}${url}`);
         return await fetch(fallbackUrl, options);
       }
       
@@ -198,7 +198,7 @@ class TunnelService {
         await this.switchMode(TunnelMode.Fallback);
         
         const fallbackUrl = url.startsWith('http') || url.startsWith('tauri://') ? url : 
-          (typeof window !== 'undefined' && window.__TAURI__ ? `tauri://localhost${url}` : `http://localhost:${port}${url}`);
+          (typeof window !== 'undefined' && (window as any).__TAURI__ ? `tauri://localhost${url}` : `http://localhost:${port}${url}`);
         return await fetch(fallbackUrl, options);
       }
       

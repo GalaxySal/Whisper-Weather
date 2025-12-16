@@ -1,5 +1,4 @@
 import { invoke } from '@tauri-apps/api/core';
-import { isTauri } from '@/lib/platform';
 
 export interface WeatherRequest {
   city: string;
@@ -29,7 +28,9 @@ export interface ApiResponse<T> {
 
 class ApiService {
   async getWeather(request: WeatherRequest): Promise<ApiResponse<WeatherData>> {
-    if (!isTauri()) {
+    const isTauri = typeof window !== 'undefined' && (window as any).__TAURI__ !== undefined;
+    
+    if (!isTauri) {
       // Fallback for browser - simulate data
       return {
         success: true,
@@ -43,9 +44,9 @@ class ApiService {
           pressure: 1013,
           visibility: 10000,
           uv_index: 5,
-          sunrise: Date.now() - 3600000 * 6,
-          sunset: Date.now() + 3600000 * 6,
-          timestamp: Date.now() / 1000,
+          sunrise: Math.floor(Date.now() / 1000) - 21600,
+          sunset: Math.floor(Date.now() / 1000) + 21600,
+          timestamp: Math.floor(Date.now() / 1000),
         },
         message: 'Success (Browser Mode)',
       };
@@ -63,7 +64,9 @@ class ApiService {
   }
 
   async searchCities(query: string): Promise<ApiResponse<string[]>> {
-    if (!isTauri()) {
+    const isTauri = typeof window !== 'undefined' && (window as any).__TAURI__ !== undefined;
+    
+    if (!isTauri) {
       // Fallback for browser - simulate city search
       return {
         success: true,
@@ -90,7 +93,9 @@ class ApiService {
   }
 
   async checkAuthStatus(): Promise<ApiResponse<{ authenticated: boolean; user_id?: string; session_expires?: number }>> {
-    if (!isTauri()) {
+    const isTauri = typeof window !== 'undefined' && (window as any).__TAURI__ !== undefined;
+    
+    if (!isTauri) {
       return {
         success: true,
         data: {
@@ -114,7 +119,9 @@ class ApiService {
   }
 
   async refreshSession(): Promise<ApiResponse<string>> {
-    if (!isTauri()) {
+    const isTauri = typeof window !== 'undefined' && (window as any).__TAURI__ !== undefined;
+    
+    if (!isTauri) {
       return {
         success: true,
         message: 'Session refreshed (Browser Mode)',
@@ -133,7 +140,9 @@ class ApiService {
   }
 
   async healthCheck(): Promise<ApiResponse<Record<string, string>>> {
-    if (!isTauri()) {
+    const isTauri = typeof window !== 'undefined' && (window as any).__TAURI__ !== undefined;
+    
+    if (!isTauri) {
       return {
         success: true,
         data: {
@@ -159,7 +168,9 @@ class ApiService {
   }
 
   async getApiConfig(): Promise<ApiResponse<Record<string, string>>> {
-    if (!isTauri()) {
+    const isTauri = typeof window !== 'undefined' && (window as any).__TAURI__ !== undefined;
+    
+    if (!isTauri) {
       return {
         success: true,
         data: {

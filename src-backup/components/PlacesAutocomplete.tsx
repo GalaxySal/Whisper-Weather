@@ -48,12 +48,14 @@ export default function PlacesAutocomplete({ onPlaceSelect, placeholder = 'Şehi
     }
   }
 
+  const handlePlaceSelect = (prediction: string) => {
+    onPlaceSelect(prediction)
+  }
+
   const handlePredictionClick = (prediction: string) => {
-    console.log('Prediction clicked:', prediction)
     setInputValue(prediction)
     setShowPredictions(false)
-    console.log('Calling onPlaceSelect with:', prediction)
-    onPlaceSelect(prediction)
+    handlePlaceSelect(prediction)
   }
 
   const handleClear = () => {
@@ -72,10 +74,7 @@ export default function PlacesAutocomplete({ onPlaceSelect, placeholder = 'Şehi
   // Click outside to close
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node
-      const autocompleteElement = inputRef.current?.parentElement?.parentElement
-      
-      if (autocompleteElement && !autocompleteElement.contains(target)) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowPredictions(false)
       }
     }
@@ -83,14 +82,6 @@ export default function PlacesAutocomplete({ onPlaceSelect, placeholder = 'Şehi
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
-
-  // Debug için
-  console.log('PlacesAutocomplete state:', {
-    inputValue,
-    showPredictions,
-    predictionsLength: predictions.length,
-    isLoading
-  })
 
   return (
     <div className={`relative ${className}`}>
@@ -125,12 +116,11 @@ export default function PlacesAutocomplete({ onPlaceSelect, placeholder = 'Şehi
             predictions.map((prediction, index) => (
               <button
                 key={index}
-                onClick={(e) => {
-                  console.log('Dropdown button clicked:', prediction)
-                  e.preventDefault()
-                  e.stopPropagation()
-                  handlePredictionClick(prediction)
-                }}
+                onClick={() => {
+                      setInputValue(prediction)
+                      setShowPredictions(false)
+                      handlePlaceSelect(prediction)
+                    }}
                 className="w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0"
               >
                 <div className="text-gray-900 font-medium">{prediction}</div>
