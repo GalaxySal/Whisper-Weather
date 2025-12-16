@@ -237,7 +237,7 @@ jobs:
         cargo tauri ios init || true
         
         # Build iOS directly with cargo tauri - it handles everything
-        cargo tauri ios build --verbose
+        cargo tauri ios build --verbose -- --destination "platform=iOS Simulator,name=iPhone 16"
         
     - name: Upload iOS artifacts
       uses: actions/upload-artifact@v4
