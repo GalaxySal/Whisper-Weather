@@ -230,10 +230,10 @@ jobs:
         # Initialize iOS project first
         cargo tauri ios init || true
         
-        # Copy project to expected location if generated in different path
-        if [ -d "src-tauri/gen/apple/whisper-weather-app.xcodeproj" ] && [ ! -d "gen/apple/whisper-weather-app.xcodeproj" ]; then
-          mkdir -p gen/apple
-          cp -r src-tauri/gen/apple/* gen/apple/
+        # Copy project to expected location - use absolute paths to ensure it works
+        if [ -d "/Users/runner/work/Whisper-Weather/Whisper-Weather/src-tauri/gen/apple/whisper-weather-app.xcodeproj" ] && [ ! -d "/Users/runner/work/Whisper-Weather/Whisper-Weather/gen/apple/whisper-weather-app.xcodeproj" ]; then
+          mkdir -p /Users/runner/work/Whisper-Weather/Whisper-Weather/gen/apple
+          cp -r /Users/runner/work/Whisper-Weather/Whisper-Weather/src-tauri/gen/apple/* /Users/runner/work/Whisper-Weather/Whisper-Weather/gen/apple/
         fi
         
         # Modify Xcode project to disable code signing completely
