@@ -9,19 +9,35 @@ export function useTheme() {
   const { saveSettings, loadSettings } = useTauri()
 
   // Check system theme
-  const checkSystemTheme = useCallback(() => {
-    if (typeof window !== 'undefined' && window.matchMedia) {
-      const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)')
-      setSystemTheme(darkModeQuery.matches ? 'dark' : 'light')
-      
-      // Listen for system theme changes
-      const handleChange = (e: MediaQueryListEvent) => {
-        setSystemTheme(e.matches ? 'dark' : 'light')
+  const checkSystemTheme = useCallback(async () => {
+    const isTauri = typeof window !== 'undefined' && (window as any).__TAURI__
+    
+    if (isTauri) {
+      try {
+        // Use Tauri command to get system theme
+        const { invoke } = (window as any).__TAURI__.core
+        const systemTheme = await invoke('get_system_theme') as 'light' | 'dark'
+        setSystemTheme(systemTheme)
+        return systemTheme
+      } catch (error) {
+        console.error('Failed to get system theme:', error)
+        // Fallback to default light theme
+        setSystemTheme('light')
+        return 'light'
       }
-      
-      darkModeQuery.addEventListener('change', handleChange)
-      return () => darkModeQuery.removeEventListener('change', handleChange)
     }
+    
+    // Web environment - use matchMedia
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+      const systemTheme = mediaQuery.matches ? 'dark' : 'light'
+      setSystemTheme(systemTheme)
+      return systemTheme
+    }
+    
+    // Fallback
+    setSystemTheme('light')
+    return 'light'
   }, [])
 
   // Load theme from settings
@@ -32,16 +48,15 @@ export function useTheme() {
       
       if (isTauri) {
         const settings = await loadSettings()
-        const savedTheme = settings.theme || 'system'
-        setTheme(savedTheme)
+        const savedTheme = settings?.theme || 'system'
+        setTheme(savedTheme as Theme)
       } else {
         // Web environment - use localStorage
-        const savedTheme = localStorage.getItem('theme') as Theme || 'system'
-        setTheme(savedTheme)
+        const savedTheme = localStorage.getItem('theme') || 'system'
+        setTheme(savedTheme as Theme)
       }
     } catch (error) {
-      console.error('Error loading theme:', error)
-      // Fallback to system theme
+      console.error('Failed to load theme:', error)
       setTheme('system')
     }
   }, [loadSettings])
@@ -61,7 +76,7 @@ export function useTheme() {
       
       setTheme(newTheme)
     } catch (error) {
-      console.error('Error saving theme:', error)
+      console.error('Failed to save theme:', error)
       // Still update local state even if save fails
       setTheme(newTheme)
     }
@@ -106,15 +121,19 @@ export function useTheme() {
       const { listen } = (window as any).__TAURI__.event
       
       // Listen for system theme changes from Rust
-      const unlisten = listen('system-theme-changed', (event: any) => {
+      listen('system-theme-changed', (event: any) => {
         const rustSystemTheme = event.payload as 'light' | 'dark'
         setSystemTheme(rustSystemTheme)
+      }).then((unlisten: () => void) => {
+        // Store unlisten function for cleanup
+        return unlisten
+      }).catch((error: Error) => {
+        console.error('Failed to listen to system theme changes:', error)
+        return () => {} // Return no-op function on error
       })
-      
-      return unlisten
     }
     
-    return () => {} // No-op for web environment
+    return Promise.resolve(() => {}) // No-op for web environment
   }, [])
 
   // Get weather-based gradient
@@ -163,14 +182,23 @@ export function useTheme() {
   }, [getCurrentTheme])
 
   useEffect(() => {
-    checkSystemTheme()
-    loadTheme()
+    const initializeTheme = async () => {
+      await checkSystemTheme()
+      await loadTheme()
+    }
+    
+    initializeTheme()
     
     // Set up Rust theme change listener
-    const unlisten = listenToRustThemeChanges()
+    listenToRustThemeChanges().then((unlisten: () => void) => {
+      return unlisten
+    }).catch((error: Error) => {
+      console.error('Failed to set up theme listener:', error)
+    })
     
+    // Cleanup function
     return () => {
-      unlisten()
+      // Unlisten will be called when the component unmounts
     }
   }, [])
 

@@ -47,10 +47,12 @@ export async function searchNominatim(query: string): Promise<CityCoordinates[]>
     const normalizedQuery = query
       .replace(/ğ/g, 'g')
       .replace(/Ğ/g, 'G')
-      .replace(/ş/g, 's')
-      .replace(/Ş/g, 'S')
       .replace(/ç/g, 'c')
       .replace(/Ç/g, 'C')
+      .replace(/ğ/g, 'g')
+      .replace(/Ğ/g, 'G')
+      .replace(/ş/g, 's')
+      .replace(/Ş/g, 'S')
       .replace(/ı/g, 'i')
       .replace(/İ/g, 'I')
       .replace(/ö/g, 'o')
@@ -58,16 +60,27 @@ export async function searchNominatim(query: string): Promise<CityCoordinates[]>
       .replace(/ü/g, 'u')
       .replace(/Ü/g, 'U')
     
+    // CORS ve rate limiting sorunları için timeout ve abort controller
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 3000) // 3 saniye timeout
+    
     const response = await fetch(
       `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(normalizedQuery)}&limit=10`,
       {
         headers: {
           'User-Agent': 'Whisper-Weather-App/1.0'
-        }
+        },
+        signal: controller.signal
       }
     )
     
-    if (!response.ok) throw new Error('Nominatim API failed')
+    clearTimeout(timeoutId)
+    
+    if (!response.ok) {
+      // Hata durumunda sessizce fallback yap
+      console.warn('Nominatim worldwide API failed silently, using fallback')
+      return []
+    }
     
     const data = await response.json()
     
@@ -79,24 +92,23 @@ export async function searchNominatim(query: string): Promise<CityCoordinates[]>
       state: item.address?.state || item.address?.state_district
     }))
   } catch (error) {
-    console.warn('Nominatim API error:', error)
+    // CORS ve diğer hataları sessize al
+    console.warn('Nominatim worldwide API error silenced:', error)
     return []
   }
 }
 
-// Nominatim API - Sadece Türkiye için arama
+// Nominatim API için Türkiye odaklı arama
 export async function searchNominatimTurkey(query: string): Promise<CityCoordinates[]> {
-  if (!query || query.length < 2) return []
-  
   try {
-    // Türkçe karakterleri normalize et (ğ → g, ş → s, ç → c, ı → i, ö → o, ü → u)
+    // Türkçe karakterleri normalize et (Nominatim UTF-8 destekliyor ama bazen sorun çıkıyor)
     const normalizedQuery = query
+      .replace(/ç/g, 'c')
+      .replace(/Ç/g, 'C')
       .replace(/ğ/g, 'g')
       .replace(/Ğ/g, 'G')
       .replace(/ş/g, 's')
       .replace(/Ş/g, 'S')
-      .replace(/ç/g, 'c')
-      .replace(/Ç/g, 'C')
       .replace(/ı/g, 'i')
       .replace(/İ/g, 'I')
       .replace(/ö/g, 'o')
@@ -104,16 +116,27 @@ export async function searchNominatimTurkey(query: string): Promise<CityCoordina
       .replace(/ü/g, 'u')
       .replace(/Ü/g, 'U')
     
+    // CORS ve rate limiting sorunları için proxy kullan veya isteği sessize al
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 3000) // 3 saniye timeout
+    
     const response = await fetch(
       `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(normalizedQuery)}&countrycodes=tr&limit=10`,
       {
         headers: {
           'User-Agent': 'Whisper-Weather-App/1.0'
-        }
+        },
+        signal: controller.signal
       }
     )
     
-    if (!response.ok) throw new Error('Nominatim API failed')
+    clearTimeout(timeoutId)
+    
+    if (!response.ok) {
+      // Hata durumunda sessizce fallback yap
+      console.warn('Nominatim API failed silently, using fallback')
+      return []
+    }
     
     const data = await response.json()
     
@@ -125,7 +148,8 @@ export async function searchNominatimTurkey(query: string): Promise<CityCoordina
       state: item.address?.state || item.address?.state_district
     }))
   } catch (error) {
-    console.warn('Nominatim Turkey API error:', error)
+    // CORS ve diğer hataları sessize al
+    console.warn('Nominatim API error silenced:', error)
     return []
   }
 }
@@ -134,15 +158,30 @@ export async function searchNominatimTurkey(query: string): Promise<CityCoordina
 export async function searchOpenWeatherMap(lat: number, lon: number): Promise<any> {
   try {
     const API_KEY = import.meta.env.VITE_OPENWEATHERMAP_API_KEY
+    
+    // CORS ve rate limiting sorunları için timeout ve abort controller
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 3000) // 3 saniye timeout
+    
     const response = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`
+      `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`,
+      {
+        signal: controller.signal
+      }
     )
     
-    if (!response.ok) throw new Error('OpenWeatherMap API failed')
+    clearTimeout(timeoutId)
+    
+    if (!response.ok) {
+      // Hata durumunda sessizce fallback yap
+      console.warn('OpenWeatherMap API failed silently, using fallback')
+      return null
+    }
     
     return await response.json()
   } catch (error) {
-    console.warn('OpenWeatherMap API error:', error)
+    // CORS ve diğer hataları sessize al
+    console.warn('OpenWeatherMap API error silenced:', error)
     return null
   }
 }

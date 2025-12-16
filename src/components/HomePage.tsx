@@ -73,6 +73,7 @@ export default function HomePage() {
           
           // Eğer Türkiye'de sonuç bulamazsa, dünya genelinde ara
           if (apiResults.nominatim.length === 0) {
+            // API'ler başarısız olursa sessizce local data'ya geç
             console.log('No Turkey results, searching worldwide...')
             apiResults = await searchCitiesWithAPIs(value)
           }
@@ -80,21 +81,14 @@ export default function HomePage() {
           // Sonra Türk şehirlerini ekle (local data)
           const turkishCities = searchTurkishCities(value)
           
+          // API sonuçları ve local sonuçları birleştir
           allSuggestions = [
-            ...apiResults.nominatim.map((city: any) => city.name).slice(0, 5), // API sonuçları öncelikli (Aliağa gibi ilçeler burada)
+            ...apiResults.nominatim.map((city: any) => city.name).slice(0, 5), // API sonuçları öncelikli
             ...turkishCities.slice(0, 3) // Local Türk şehirleri
           ]
-          
-          // Debug information
-          if (apiResults.nominatim.length > 0) {
-            console.log('Nominatim results:', apiResults.nominatim)
-          }
-          if (apiResults.weather.length > 0) {
-            console.log('Weather data from coordinates:', apiResults.weather)
-          }
         } catch (apiError) {
-          console.warn('APIs failed, using local only:', apiError)
-          // API'ler başarısız olursa sadece Türk şehirlerini kullan
+          // API'ler başarısız olursa sadece Türk şehirlerini kullan, hata gösterme
+          console.log('APIs failed, using local data only')
           const turkishCities = searchTurkishCities(value)
           allSuggestions = turkishCities.slice(0, 8)
         }
