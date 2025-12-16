@@ -230,29 +230,7 @@ jobs:
         # Initialize iOS project first
         cargo tauri ios init || true
         
-        # Copy project to expected location - use absolute paths to ensure it works
-        if [ -d "/Users/runner/work/Whisper-Weather/Whisper-Weather/src-tauri/gen/apple/whisper-weather-app.xcodeproj" ] && [ ! -d "/Users/runner/work/Whisper-Weather/Whisper-Weather/gen/apple/whisper-weather-app.xcodeproj" ]; then
-          mkdir -p /Users/runner/work/Whisper-Weather/Whisper-Weather/gen/apple
-          cp -r /Users/runner/work/Whisper-Weather/Whisper-Weather/src-tauri/gen/apple/* /Users/runner/work/Whisper-Weather/Whisper-Weather/gen/apple/
-        fi
-        
-        # Modify Xcode project to disable code signing completely
-        cd gen/apple/whisper-weather-app.xcodeproj/
-        sed -i '' 's/DEVELOPMENT_TEAM = .*/DEVELOPMENT_TEAM = ""/' project.pbxproj
-        cd ../..
-        
-        xcodebuild -project gen/apple/whisper-weather-app.xcodeproj \
-                   -scheme whisper-weather-app_iOS \
-                   -configuration Release \
-                   -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
-                   -allowProvisioningUpdates \
-                   CODE_SIGNING_ALLOWED=NO \
-                   CODE_SIGN_IDENTITY="" \
-                   DEVELOPMENT_TEAM="" \
-                   PROVISIONING_PROFILE="" \
-                   CODE_SIGNING_REQUIRED=NO \
-                   CODE_SIGN_ENTITLEMENTS="" \
-                   PROVISIONING_PROFILE_SPECIFIER="" || \
+        # Build iOS directly with cargo tauri - it handles everything
         cargo tauri ios build --verbose
         
     - name: Upload iOS artifacts
