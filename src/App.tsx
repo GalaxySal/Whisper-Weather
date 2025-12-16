@@ -8,6 +8,7 @@ import { translateWeatherCondition } from "./lib/weather-translations";
 import { toast } from "sonner";
 import "./App.css";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import FavoriteCities from "./components/FavoriteCities";
 import AppSidebar from "./components/AppSidebar";
 import WeatherExplorerWithErrorBoundary from "./components/WeatherExplorer";
@@ -21,17 +22,13 @@ import Updates from "./components/Updates";
 
 // Main App component
 export function AppContent() {
-  console.log('AppContent rendering...');
   const [currentPage, setCurrentPage] = useState('home');
-  console.log('currentPage:', currentPage);
   const [searchCity, setSearchCity] = useState("");
   const [weatherData, setWeatherData] = useState<any>(null);
   const [error, setError] = useState("");
   const { language } = useLanguage();
   const { theme, applyWeatherTheme, isThemeReady } = useTheme();
   const t = translations[language];
-
-  console.log('Theme ready:', isThemeReady);
 
   // Update theme based on weather
   useEffect(() => {
@@ -56,7 +53,6 @@ export function AppContent() {
 
   // Wait for theme to be ready
   if (!isThemeReady) {
-    console.log('Theme not ready, returning loading...');
     return (
       <div className="flex min-h-screen weather-gradient items-center justify-center">
         <div className="text-white text-xl">Loading...</div>
@@ -131,7 +127,6 @@ export function AppContent() {
 
   // Sayfa render fonksiyonu
   const renderPage = () => {
-    console.log('renderPage called with currentPage:', currentPage);
     switch (currentPage) {
       case 'explorer':
         return <WeatherExplorerWithErrorBoundary />;
@@ -240,16 +235,16 @@ export function AppContent() {
   };
 
   // Render the main app
-  console.log('About to return JSX...');
   return (
-    <div className="flex min-h-screen weather-gradient">
-      {/* Sidebar */}
-      <div className="w-16 flex-shrink-0">
-        <AppSidebar 
-          currentPage={currentPage} 
-          onPageChange={setCurrentPage} 
-        />
-      </div>
+    <SidebarProvider>
+      <div className="flex min-h-screen weather-gradient">
+        {/* Sidebar */}
+        <div className="w-16 flex-shrink-0">
+          <AppSidebar 
+            currentPage={currentPage} 
+            onPageChange={setCurrentPage} 
+          />
+        </div>
       
       {/* Main Content */}
       <div className="flex-1 min-h-screen backdrop-blur-sm bg-black/10 flex items-start justify-center p-4 md:p-6 lg:p-8 pt-8 md:pt-12 lg:pt-16">
@@ -258,6 +253,7 @@ export function AppContent() {
         </div>
       </div>
     </div>
+    </SidebarProvider>
   );
 }
 

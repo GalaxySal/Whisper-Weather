@@ -32,30 +32,24 @@ export function useTauri() {
   const loadFavoriteCities = async () => {
     if (isTauri()) {
       try {
-        console.log('Loading favorite cities from Tauri...')
         const result = await invoke('load_favorite_cities')
-        console.log('Tauri result:', result, typeof result)
         
         // Handle empty string or invalid JSON
         if (!result || result === '') {
-          console.log('Empty result, returning []')
           return []
         }
         
         // If result is already an array, return it
         if (Array.isArray(result)) {
-          console.log('Result is array:', result)
           return result
         }
         
         // If result is a string, try to parse it
         if (typeof result === 'string') {
-          console.log('Parsing string result:', result)
           return JSON.parse(result)
         }
         
         // Fallback
-        console.log('Unknown result type, returning []')
         return []
       } catch (error) {
         console.error('Error loading favorite cities from Tauri:', error)

@@ -112,12 +112,15 @@ export function useTheme() {
     
     const setupListener = async () => {
       try {
-        unlisten = await listen<string>('system-theme-changed', (event) => {
-          const newSystemTheme = event.payload
-          if (theme === 'system') {
-            applyTheme(newSystemTheme === 'dark' ? 'dark' : 'light')
-          }
-        })
+        // Only setup listener if we're in Tauri environment
+        if (window.__TAURI__) {
+          unlisten = await listen<string>('system-theme-changed', (event) => {
+            const newSystemTheme = event.payload
+            if (theme === 'system') {
+              applyTheme(newSystemTheme === 'dark' ? 'dark' : 'light')
+            }
+          })
+        }
       } catch (error) {
         console.warn('Failed to setup system theme listener:', error)
       }
