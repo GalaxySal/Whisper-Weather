@@ -226,9 +226,6 @@ jobs:
         export TAURI_SKIP_DEV_SERVER=true
         export TAURI_BUNDLE_IDENTIFIER="com.zentaria.whisper-weather"
         
-        # Force simulator build to avoid code signing
-        export TAURI_IOS_BUILD_TARGET=iphonesimulator
-        
         # Create server address file to prevent Tauri CLI panic
         mkdir -p /var/folders/bp/kmfmhnl95kx1c8x321z7twbw0000gn/T/
         echo "127.0.0.1:1430" > /var/folders/bp/kmfmhnl95kx1c8x321z7twbw0000gn/T/com.zentaria.whisper-weather-server-addr
@@ -236,8 +233,22 @@ jobs:
         # Initialize iOS project first
         cargo tauri ios init || true
         
-        # Build iOS directly with cargo tauri - it handles everything
-        cargo tauri ios build --verbose -- --destination "platform=iOS Simulator,name=iPhone 16"
+        # Build frontend first
+        npm run build
+        
+        # Build iOS directly with xcodebuild for simulator
+        xcodebuild -allowProvisioningUpdates \
+          -scheme whisper-weather-app_iOS \
+          -workspace gen/apple/whisper-weather-app.xcodeproj/project.xcworkspace/ \
+          -sdk iphonesimulator \
+          -configuration release \
+          -destination 'platform=iOS Simulator,name=iPhone 16' \
+          CODE_SIGNING_ALLOWED=NO \
+          CODE_SIGN_IDENTITY="" \
+          DEVELOPMENT_TEAM="" \
+          PROVISIONING_PROFILE="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGN_ENTITLEMENTS=""
         
     - name: Upload iOS artifacts
       uses: actions/upload-artifact@v4
