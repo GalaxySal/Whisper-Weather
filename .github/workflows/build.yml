@@ -219,6 +219,9 @@ jobs:
         export PROVISIONING_PROFILE=""
         export CODE_SIGNING_REQUIRED=NO
         export CODE_SIGN_ENTITLEMENTS=""
+        export CODE_SIGN_RESOURCE_RULES_PATH=""
+        export AD_HOC_CODE_SIGNING_ALLOWED=NO
+        export ENABLE_CODE_COVERAGE=NO
         export TAURI_CLI_NO_DEV_SERVER=true
         export TAURI_SKIP_DEV_SERVER=true
         export TAURI_BUNDLE_IDENTIFIER="com.zentaria.whisper-weather"
@@ -230,15 +233,16 @@ jobs:
         # Initialize iOS project first
         cargo tauri ios init || true
         
-        # Build iOS directly with cargo tauri - it handles everything
-        cargo tauri ios build --verbose
+        # Build iOS for simulator to avoid code signing requirements
+        cargo tauri ios build --verbose --platform ios-simulator
         
     - name: Upload iOS artifacts
       uses: actions/upload-artifact@v4
       with:
         name: whisper-weather-ios
         path: |
-          src-tauri/target/ios/*/build/Build/Products/Release-iphoneos/*.ipa
+          src-tauri/target/ios/*/build/Build/Products/Release-iphonesimulator/*.app
+          src-tauri/target/ios/*/build/Build/Products/Release-iphonesimulator/*.dSYM
         retention-days: 30
         
   # Security Scan Job
