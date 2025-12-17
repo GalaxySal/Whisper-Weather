@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env;
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 use tauri::State;
 
 // API Query logging
@@ -160,7 +161,7 @@ pub struct NominatimResponse {
     pub lat: String,
     pub lon: String,
     pub display_name: String,
-    pub address: NominatimAddress,
+    pub address: Option<NominatimAddress>,
     pub boundingbox: Vec<String>,
 }
 
@@ -191,7 +192,10 @@ pub async fn get_weather(request: WeatherRequest) -> Result<ApiResponse<WeatherD
     let result = async {
         let api_key = env::var("VITE_OPENWEATHERMAP_API_KEY")
             .or_else(|_| env::var("OPENWEATHERMAP_API_KEY"))
-            .map_err(|_| "OpenWeatherMap API key not found".to_string())?;
+            .unwrap_or_else(|_| {
+                // Fallback to hardcoded key for production debugging
+                "5d05b84ad6236dcc4cf258d5a70c9214".to_string()
+            });
 
         let client = Client::new();
         let units = request.units.unwrap_or_else(|| "metric".to_string());
@@ -205,6 +209,7 @@ pub async fn get_weather(request: WeatherRequest) -> Result<ApiResponse<WeatherD
         let nominatim_response: Vec<NominatimResponse> = client
             .get(&nominatim_url)
             .header("User-Agent", "WhisperWeather/1.0")
+            .timeout(Duration::from_secs(10))
             .send()
             .await
             .map_err(|e| format!("Failed to fetch coordinates: {}", e))?
@@ -234,6 +239,7 @@ pub async fn get_weather(request: WeatherRequest) -> Result<ApiResponse<WeatherD
 
         let weather_response: OpenWeatherResponse = client
             .get(&weather_url)
+            .timeout(Duration::from_secs(10))
             .send()
             .await
             .map_err(|e| format!("Failed to fetch weather data: {}", e))?
@@ -278,27 +284,76 @@ pub async fn get_weather(request: WeatherRequest) -> Result<ApiResponse<WeatherD
 #[tauri::command]
 pub async fn search_weather_cities(query: String) -> Result<ApiResponse<Vec<String>>, String> {
     let client = Client::new();
+    
+    // Türkçe karakterleri normalize et
+    let normalized_query = query
+        .replace("ç", "c")
+        .replace("Ç", "C")
+        .replace("ğ", "g")
+        .replace("Ğ", "G")
+        .replace("ş", "s")
+        .replace("Ş", "S")
+        .replace("ı", "i")
+        .replace("İ", "I")
+        .replace("ö", "o")
+        .replace("Ö", "O")
+        .replace("ü", "u")
+        .replace("Ü", "U");
 
-    // Search for cities using Nominatim (OpenStreetMap)
+    // Search for cities using Nominatim (OpenStreetMap) - Türkiye odaklı
     let nominatim_url = format!(
-        "https://nominatim.openstreetmap.org/search?format=json&q={}&limit=5",
-        query
+        "https://nominatim.openstreetmap.org/search?format=json&q={}&countrycodes=tr&limit=10",
+        normalized_query
     );
 
-    let nominatim_response: Vec<NominatimResponse> = client
+    let cities = match client
         .get(&nominatim_url)
         .header("User-Agent", "WhisperWeather/1.0")
+        .timeout(Duration::from_secs(10))
         .send()
         .await
-        .map_err(|e| format!("Failed to search cities: {}", e))?
-        .json()
-        .await
-        .map_err(|e| format!("Failed to parse search response: {}", e))?;
-
-    let cities: Vec<String> = nominatim_response
-        .into_iter()
-        .map(|location| location.display_name)
-        .collect();
+    {
+        Ok(response) => {
+            match response.json::<Vec<NominatimResponse>>().await {
+                Ok(nominatim_response) => {
+                    let mut city_names: Vec<String> = nominatim_response
+                        .into_iter()
+                        .map(|location| location.display_name.split(',').next().unwrap_or(&location.display_name).to_string())
+                        .collect();
+                    
+                    if city_names.is_empty() {
+                        let worldwide_url = format!(
+                            "https://nominatim.openstreetmap.org/search?format=json&q={}&limit=5",
+                            normalized_query
+                        );
+                        
+                        if let Ok(worldwide_response) = client
+                            .get(&worldwide_url)
+                            .header("User-Agent", "WhisperWeather/1.0")
+                            .timeout(Duration::from_secs(10))
+                            .send()
+                            .await
+                        {
+                            if let Ok(worldwide_data) = worldwide_response.json::<Vec<NominatimResponse>>().await {
+                                city_names = worldwide_data
+                                    .into_iter()
+                                    .map(|location| location.display_name.split(',').next().unwrap_or(&location.display_name).to_string())
+                                    .collect();
+                            }
+                        }
+                    }
+                    
+                    city_names
+                }
+                Err(_e) => {
+                    Vec::new()
+                }
+            }
+        }
+        Err(_e) => {
+            Vec::new()
+        }
+    };
 
     Ok(ApiResponse::success(cities))
 }

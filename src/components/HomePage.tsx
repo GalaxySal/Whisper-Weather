@@ -4,6 +4,7 @@ import { getWeatherByCity, type WeatherData } from '../lib/api'
 import { useTheme } from '../hooks/use-theme'
 import { useTranslation } from '../hooks/use-translation'
 import { useFavorites } from '../hooks/use-favorites'
+import { apiService } from '../services/api'
 import { searchTurkishCities, searchCitiesWithAPIs, searchTurkeyWithAPIs } from '../data/turkish-cities'
 import { toast } from 'sonner'
 
@@ -18,8 +19,7 @@ export default function HomePage() {
   const { t, language } = useTranslation()
   const { addFavorite, removeFavorite, isFavorite } = useFavorites()
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSearch = async () => {
     if (!searchCity.trim()) return
 
     setLoading(true)
@@ -39,19 +39,26 @@ export default function HomePage() {
         }
       )
     } catch (error) {
-      const errorMsg = language === 'tr' ? 'Şehir bulunamadı. Lütfen tekrar deneyin.' : 'City not found. Please try again.'
-      setError(errorMsg)
-      setWeatherData(null)
+      console.error('HomePage: Error in handleSearch:', error);
       
-      // Hata bildirimi
+      // Önce toast ile hatayı göster
+      const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen hata';
+      
       toast.error(
-        language === 'tr' ? 'Hata' : 'Error',
+        language === 'tr' ? 'Hava durumu alınamadı' : 'Weather fetch failed',
         {
-          description: errorMsg,
-          duration: 4000,
+          description: errorMessage,
+          duration: 5000,
           position: 'bottom-right'
         }
-      )
+      );
+      
+      // Sonra error state'ini güncelle
+      const errorMsg = language === 'tr' 
+        ? `Şehir bulunamadı: ${errorMessage}. Lütfen tekrar deneyin.` 
+        : `City not found: ${errorMessage}. Please try again.`
+      setError(errorMsg)
+      setWeatherData(null)
     } finally {
       setLoading(false)
     }
@@ -64,38 +71,52 @@ export default function HomePage() {
     if (value.length > 1) {
       try {
         let allSuggestions: string[] = []
-        let apiResults: any = null
         
-        // Hem Web hem Tauri için aynı mantık: önce Türkiye sonra dünya
-        try {
-          // Önce Türkiye odaklı arama dene (Türkçe karakterler normalize edilmiş)
-          apiResults = await searchTurkeyWithAPIs(value)
-          
-          // Eğer Türkiye'de sonuç bulamazsa, dünya genelinde ara
-          if (apiResults.nominatim.length === 0) {
-            // API'ler başarısız olursa sessizce local data'ya geç
-            console.log('No Turkey results, searching worldwide...')
-            apiResults = await searchCitiesWithAPIs(value)
+        // Production Tauri için API service kullan
+        const isTauri = typeof window !== 'undefined' && (window as any).__TAURI__
+        
+        if (isTauri) {
+          // Tauri environment - API service kullan
+          try {
+            const response = await apiService.searchCities(value)
+            if (response.success && response.data) {
+              allSuggestions = response.data.slice(0, 8)
+            }
+          } catch (apiError) {
+            console.log('Tauri API failed, using local data')
           }
-          
-          // Sonra Türk şehirlerini ekle (local data)
-          const turkishCities = searchTurkishCities(value)
-          
-          // API sonuçları ve local sonuçları birleştir
-          allSuggestions = [
-            ...apiResults.nominatim.map((city: any) => city.name).slice(0, 5), // API sonuçları öncelikli
-            ...turkishCities.slice(0, 3) // Local Türk şehirleri
-          ]
-        } catch (apiError) {
-          // API'ler başarısız olursa sadece Türk şehirlerini kullan, hata gösterme
-          console.log('APIs failed, using local data only')
-          const turkishCities = searchTurkishCities(value)
-          allSuggestions = turkishCities.slice(0, 8)
+        } else {
+          // Web environment - web API'leri kullan
+          try {
+            const apiResults = await searchTurkeyWithAPIs(value)
+            
+            if (apiResults.nominatim.length === 0) {
+              console.log('No Turkey results, searching worldwide...')
+              const worldwideResults = await searchCitiesWithAPIs(value)
+              allSuggestions = [
+                ...worldwideResults.nominatim.map((city: any) => city.name).slice(0, 5)
+              ]
+            } else {
+              allSuggestions = [
+                ...apiResults.nominatim.map((city: any) => city.name).slice(0, 5)
+              ]
+            }
+          } catch (apiError) {
+            console.log('Web APIs failed, using local data')
+          }
         }
         
-        // Benzersiz sonuçları al ve Türkçe karakterleri koru
-        const uniqueSuggestions = [...new Set(allSuggestions)]
-        setSuggestions(uniqueSuggestions.slice(0, 8)) // En fazla 8 öneri
+        // Her zaman local Türk şehirlerini ekle (Tauri ve Web için)
+        const turkishCities = searchTurkishCities(value)
+        if (allSuggestions.length === 0) {
+          allSuggestions = turkishCities.slice(0, 8)
+        } else {
+          // API sonuçları varsa, local sonuçları ekle ama limiti koru
+          const combined = [...allSuggestions, ...turkishCities]
+          allSuggestions = [...new Set(combined)].slice(0, 8)
+        }
+        
+        setSuggestions(allSuggestions)
         setShowSuggestions(true)
         
       } catch (error) {
@@ -131,7 +152,7 @@ export default function HomePage() {
         {t('appTitle')}
       </h1>
 
-      <form onSubmit={handleSearch} className="mb-8">
+      <form onSubmit={(e) => { e.preventDefault(); handleSearch(); }} className="mb-8">
         <div className="relative max-w-md mx-auto">
           <div className="flex gap-2">
             <input

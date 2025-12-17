@@ -25,22 +25,46 @@ export interface WeatherRequest {
 const OPENWEATHERMAP_API_KEY = import.meta.env.VITE_OPENWEATHERMAP_API_KEY
 
 export async function getWeatherByCity(city: string, units: string = 'metric'): Promise<WeatherData> {
-  try {
-    // Önce Tauri backend'i dene
-    const request: WeatherRequest = { city, units }
-    const response = await invoke<any>('get_weather', { request })
-    
-    if (!response.success) {
-      throw new Error(response.message || 'Failed to fetch weather data')
-    }
-    
-    return response.data
-  } catch (error) {
-    // Tauri başarısız olursa OpenWeatherMap API'sini dene
-    console.warn('Tauri API failed, trying OpenWeatherMap:', error)
-    
+  const isTauri = typeof window !== 'undefined' && (window as any).__TAURI__ !== undefined;
+  
+  if (isTauri) {
     try {
-      // OpenWeatherMap API ile doğrudan veri çek
+      console.log('Tauri: Attempting to get weather for city:', city);
+      // Tauri backend'i kullan
+      const request: WeatherRequest = { city, units }
+      const response = await invoke<any>('get_weather', { request })
+      
+      console.log('Tauri: Raw response from backend:', response);
+      
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to fetch weather data')
+      }
+      
+      console.log('Tauri: Successfully got weather data:', response.data);
+      return response.data
+    } catch (error) {
+      console.error('Tauri: Backend failed, error:', error);
+      
+      // Mock data fallback - hata durumunda mock veri dön
+      console.warn('Tauri failed, using mock data');
+      return {
+        city,
+        temperature: Math.floor(Math.random() * 30) + 10,
+        condition: ['Clear', 'Clouds', 'Rain'][Math.floor(Math.random() * 3)],
+        humidity: Math.floor(Math.random() * 40) + 40,
+        wind_speed: Math.random() * 10 + 1,
+        feels_like: Math.floor(Math.random() * 30) + 10,
+        pressure: Math.floor(Math.random() * 50) + 980,
+        visibility: 10000,
+        uv_index: Math.floor(Math.random() * 10) + 1,
+        sunrise: Math.floor(Date.now() / 1000) - 3600,
+        sunset: Math.floor(Date.now() / 1000) + 3600,
+        timestamp: Math.floor(Date.now() / 1000)
+      }
+    }
+  } else {
+    // Web environment - doğrudan OpenWeatherMap API
+    try {
       const geoResponse = await fetch(
         `http://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(city)}&limit=1&appid=${OPENWEATHERMAP_API_KEY}`
       )
@@ -52,7 +76,6 @@ export async function getWeatherByCity(city: string, units: string = 'metric'): 
       
       const { lat, lon } = geoData[0]
       
-      // Hava durumu verisini çek
       const weatherResponse = await fetch(
         `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${OPENWEATHERMAP_API_KEY}&units=${units}`
       )
@@ -69,14 +92,14 @@ export async function getWeatherByCity(city: string, units: string = 'metric'): 
         feels_like: Math.round(weatherData.main.feels_like),
         pressure: weatherData.main.pressure,
         visibility: weatherData.visibility || 10000,
-        uv_index: 0, // OpenWeatherMap free plan'de UV index yok
+        uv_index: 0,
         sunrise: weatherData.sys.sunrise,
         sunset: weatherData.sys.sunset,
         timestamp: Math.floor(Date.now() / 1000)
       }
-    } catch (apiError) {
-      console.warn('OpenWeatherMap API failed, using mock data:', apiError)
-      // Son çare: mock data
+    } catch (error) {
+      console.error('Web: API failed:', error);
+      // Mock data fallback
       return {
         city,
         temperature: Math.floor(Math.random() * 30) + 10,
