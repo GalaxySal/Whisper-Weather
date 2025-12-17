@@ -284,7 +284,7 @@ pub async fn get_weather(request: WeatherRequest) -> Result<ApiResponse<WeatherD
 #[tauri::command]
 pub async fn search_weather_cities(query: String) -> Result<ApiResponse<Vec<String>>, String> {
     let client = Client::new();
-    
+
     // Türkçe karakterleri normalize et
     let normalized_query = query
         .replace("ç", "c")
@@ -313,46 +313,56 @@ pub async fn search_weather_cities(query: String) -> Result<ApiResponse<Vec<Stri
         .send()
         .await
     {
-        Ok(response) => {
-            match response.json::<Vec<NominatimResponse>>().await {
-                Ok(nominatim_response) => {
-                    let mut city_names: Vec<String> = nominatim_response
-                        .into_iter()
-                        .map(|location| location.display_name.split(',').next().unwrap_or(&location.display_name).to_string())
-                        .collect();
-                    
-                    if city_names.is_empty() {
-                        let worldwide_url = format!(
-                            "https://nominatim.openstreetmap.org/search?format=json&q={}&limit=5",
-                            normalized_query
-                        );
-                        
-                        if let Ok(worldwide_response) = client
-                            .get(&worldwide_url)
-                            .header("User-Agent", "WhisperWeather/1.0")
-                            .timeout(Duration::from_secs(10))
-                            .send()
-                            .await
+        Ok(response) => match response.json::<Vec<NominatimResponse>>().await {
+            Ok(nominatim_response) => {
+                let mut city_names: Vec<String> = nominatim_response
+                    .into_iter()
+                    .map(|location| {
+                        location
+                            .display_name
+                            .split(',')
+                            .next()
+                            .unwrap_or(&location.display_name)
+                            .to_string()
+                    })
+                    .collect();
+
+                if city_names.is_empty() {
+                    let worldwide_url = format!(
+                        "https://nominatim.openstreetmap.org/search?format=json&q={}&limit=5",
+                        normalized_query
+                    );
+
+                    if let Ok(worldwide_response) = client
+                        .get(&worldwide_url)
+                        .header("User-Agent", "WhisperWeather/1.0")
+                        .timeout(Duration::from_secs(10))
+                        .send()
+                        .await
+                    {
+                        if let Ok(worldwide_data) =
+                            worldwide_response.json::<Vec<NominatimResponse>>().await
                         {
-                            if let Ok(worldwide_data) = worldwide_response.json::<Vec<NominatimResponse>>().await {
-                                city_names = worldwide_data
-                                    .into_iter()
-                                    .map(|location| location.display_name.split(',').next().unwrap_or(&location.display_name).to_string())
-                                    .collect();
-                            }
+                            city_names = worldwide_data
+                                .into_iter()
+                                .map(|location| {
+                                    location
+                                        .display_name
+                                        .split(',')
+                                        .next()
+                                        .unwrap_or(&location.display_name)
+                                        .to_string()
+                                })
+                                .collect();
                         }
                     }
-                    
-                    city_names
                 }
-                Err(_e) => {
-                    Vec::new()
-                }
+
+                city_names
             }
-        }
-        Err(_e) => {
-            Vec::new()
-        }
+            Err(_e) => Vec::new(),
+        },
+        Err(_e) => Vec::new(),
     };
 
     Ok(ApiResponse::success(cities))
