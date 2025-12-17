@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invoke } from "@tauri-apps/api/core";
 
 export interface WeatherRequest {
   city: string;
@@ -28,8 +28,9 @@ export interface ApiResponse<T> {
 
 class ApiService {
   async getWeather(request: WeatherRequest): Promise<ApiResponse<WeatherData>> {
-    const isTauri = typeof window !== 'undefined' && (window as any).__TAURI__ !== undefined;
-    
+    const isTauri =
+      typeof window !== "undefined" && (window as any).__TAURI__ !== undefined;
+
     if (!isTauri) {
       // Fallback for browser - simulate data
       return {
@@ -37,7 +38,7 @@ class ApiService {
         data: {
           city: request.city,
           temperature: 22.5,
-          condition: 'Partly Cloudy',
+          condition: "Partly Cloudy",
           humidity: 65,
           wind_speed: 12.3,
           feels_like: 21,
@@ -48,24 +49,27 @@ class ApiService {
           sunset: Math.floor(Date.now() / 1000) + 21600,
           timestamp: Math.floor(Date.now() / 1000),
         },
-        message: 'Success (Browser Mode)',
+        message: "Success (Browser Mode)",
       };
     }
 
     try {
-      const response = await invoke<ApiResponse<WeatherData>>('get_weather', { request });
+      const response = await invoke<ApiResponse<WeatherData>>("get_weather", {
+        request,
+      });
       return response;
     } catch (error) {
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }
 
   async searchCities(query: string): Promise<ApiResponse<string[]>> {
-    const isTauri = typeof window !== 'undefined' && (window as any).__TAURI__ !== undefined;
-    
+    const isTauri =
+      typeof window !== "undefined" && (window as any).__TAURI__ !== undefined;
+
     if (!isTauri) {
       // Fallback for browser - simulate city search
       return {
@@ -77,24 +81,34 @@ class ApiService {
           `${query} (East District)`,
           `${query} (West District)`,
         ],
-        message: 'Success (Browser Mode)',
+        message: "Success (Browser Mode)",
       };
     }
 
     try {
-      const response = await invoke<ApiResponse<string[]>>('search_weather_cities', { query });
+      const response = await invoke<ApiResponse<string[]>>(
+        "search_weather_cities",
+        { query },
+      );
       return response;
     } catch (error) {
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }
 
-  async checkAuthStatus(): Promise<ApiResponse<{ authenticated: boolean; user_id?: string; session_expires?: number }>> {
-    const isTauri = typeof window !== 'undefined' && (window as any).__TAURI__ !== undefined;
-    
+  async checkAuthStatus(): Promise<
+    ApiResponse<{
+      authenticated: boolean;
+      user_id?: string;
+      session_expires?: number;
+    }>
+  > {
+    const isTauri =
+      typeof window !== "undefined" && (window as any).__TAURI__ !== undefined;
+
     if (!isTauri) {
       return {
         success: true,
@@ -103,93 +117,104 @@ class ApiService {
           user_id: undefined,
           session_expires: undefined,
         },
-        message: 'Success (Browser Mode)',
+        message: "Success (Browser Mode)",
       };
     }
 
     try {
-      const response = await invoke('check_auth_status') as ApiResponse<{ authenticated: boolean; user_id?: string; session_expires?: number }>;
+      const response = (await invoke("check_auth_status")) as ApiResponse<{
+        authenticated: boolean;
+        user_id?: string;
+        session_expires?: number;
+      }>;
       return response;
     } catch (error) {
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }
 
   async refreshSession(): Promise<ApiResponse<string>> {
-    const isTauri = typeof window !== 'undefined' && (window as any).__TAURI__ !== undefined;
-    
+    const isTauri =
+      typeof window !== "undefined" && (window as any).__TAURI__ !== undefined;
+
     if (!isTauri) {
       return {
         success: true,
-        message: 'Session refreshed (Browser Mode)',
+        message: "Session refreshed (Browser Mode)",
       };
     }
 
     try {
-      const response = await invoke('refresh_session') as ApiResponse<string>;
+      const response = (await invoke("refresh_session")) as ApiResponse<string>;
       return response;
     } catch (error) {
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }
 
   async healthCheck(): Promise<ApiResponse<Record<string, string>>> {
-    const isTauri = typeof window !== 'undefined' && (window as any).__TAURI__ !== undefined;
-    
+    const isTauri =
+      typeof window !== "undefined" && (window as any).__TAURI__ !== undefined;
+
     if (!isTauri) {
       return {
         success: true,
         data: {
-          status: 'healthy',
+          status: "healthy",
           timestamp: new Date().toISOString(),
-          version: '1.0.0',
-          uptime: '0s',
-          platform: 'browser',
+          version: "1.0.0",
+          uptime: "0s",
+          platform: "browser",
         },
-        message: 'Success (Browser Mode)',
+        message: "Success (Browser Mode)",
       };
     }
 
     try {
-      const response = await invoke('api_health_check') as ApiResponse<Record<string, string>>;
+      const response = (await invoke("api_health_check")) as ApiResponse<
+        Record<string, string>
+      >;
       return response;
     } catch (error) {
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }
 
   async getApiConfig(): Promise<ApiResponse<Record<string, string>>> {
-    const isTauri = typeof window !== 'undefined' && (window as any).__TAURI__ !== undefined;
-    
+    const isTauri =
+      typeof window !== "undefined" && (window as any).__TAURI__ !== undefined;
+
     if (!isTauri) {
       return {
         success: true,
         data: {
-          api_version: 'v1',
-          rate_limit: '100/hour',
-          features: 'weather,auth',
-          platform: 'browser',
+          api_version: "v1",
+          rate_limit: "100/hour",
+          features: "weather,auth",
+          platform: "browser",
         },
-        message: 'Success (Browser Mode)',
+        message: "Success (Browser Mode)",
       };
     }
 
     try {
-      const response = await invoke('get_api_config') as ApiResponse<Record<string, string>>;
+      const response = (await invoke("get_api_config")) as ApiResponse<
+        Record<string, string>
+      >;
       return response;
     } catch (error) {
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }

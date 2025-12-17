@@ -1,7 +1,7 @@
 declare global {
   interface Window {
-    google: typeof google
+    google: typeof google;
   }
 }
 
-export {}
+export {};

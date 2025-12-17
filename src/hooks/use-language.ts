@@ -1,34 +1,34 @@
-import { useState, useEffect, useCallback } from 'react'
-import { useTauri } from './use-tauri'
+import { useState, useEffect, useCallback } from "react";
+import { useTauri } from "./use-tauri";
 
-type Language = 'tr' | 'en'
+type Language = "tr" | "en";
 
 export function useLanguage() {
-  const [language, setLanguage] = useState<Language>('tr')
-  const { saveSettings, loadSettings } = useTauri()
+  const [language, setLanguage] = useState<Language>("tr");
+  const { saveSettings, loadSettings } = useTauri();
 
   const loadLanguage = useCallback(async () => {
     try {
-      const settings = await loadSettings()
-      setLanguage(settings.language || 'tr')
+      const settings = await loadSettings();
+      setLanguage(settings.language || "tr");
     } catch (error) {
-      console.error('Error loading language:', error)
+      console.error("Error loading language:", error);
     }
-  }, [loadSettings])
+  }, [loadSettings]);
 
   useEffect(() => {
-    loadLanguage()
-  }, [loadLanguage])
+    loadLanguage();
+  }, [loadLanguage]);
 
   const changeLanguage = async (newLanguage: Language) => {
-    setLanguage(newLanguage)
+    setLanguage(newLanguage);
     try {
-      const settings = await loadSettings()
-      await saveSettings(newLanguage, settings.theme || 'system')
+      const settings = await loadSettings();
+      await saveSettings(newLanguage, settings.theme || "system");
     } catch (error) {
-      console.error('Error saving language:', error)
+      console.error("Error saving language:", error);
     }
-  }
+  };
 
-  return { language, setLanguage: changeLanguage }
+  return { language, setLanguage: changeLanguage };
 }

@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invoke } from "@tauri-apps/api/core";
 
 export interface LoginRequest {
   email: string;
@@ -32,48 +32,48 @@ class AuthService {
     const deviceInfo = await this.getDeviceInfo();
     const fullRequest = {
       ...request,
-      deviceInfo
+      deviceInfo,
     };
 
     try {
-      const response = await invoke<LoginResponse>('login_user', { 
-        request: fullRequest 
+      const response = await invoke<LoginResponse>("login_user", {
+        request: fullRequest,
       });
 
       if (response.success) {
         this.clearFailedAttempts(request.email);
-        console.log('Login successful');
+        console.log("Login successful");
       } else if (response.requiresCaptcha) {
         this.recordFailedAttempt(request.email);
-        console.log('CAPTCHA required');
+        console.log("CAPTCHA required");
       }
 
       return response;
     } catch (error) {
       this.recordFailedAttempt(request.email);
-      console.error('Login failed:', error);
+      console.error("Login failed:", error);
       throw error;
     }
   }
 
   async verifyCaptcha(token: string, userIp?: string): Promise<boolean> {
     try {
-      const result = await invoke<boolean>('verify_captcha', { 
+      const result = await invoke<boolean>("verify_captcha", {
         captchaToken: token,
-        userIp 
+        userIp,
       });
       return result;
     } catch (error) {
-      console.error('CAPTCHA verification failed:', error);
+      console.error("CAPTCHA verification failed:", error);
       return false;
     }
   }
 
   async checkCloudflareHealth(): Promise<boolean> {
     try {
-      return await invoke<boolean>('check_cloudflare_health');
+      return await invoke<boolean>("check_cloudflare_health");
     } catch (error) {
-      console.error('Cloudflare health check failed:', error);
+      console.error("Cloudflare health check failed:", error);
       return false;
     }
   }
@@ -84,7 +84,7 @@ class AuthService {
     const now = Date.now();
 
     // Check if user had 3 failed attempts in last 5 minutes
-    if (attempts >= 3 && (now - lastAttempt) < 300000) {
+    if (attempts >= 3 && now - lastAttempt < 300000) {
       return true;
     }
 
@@ -102,7 +102,7 @@ class AuthService {
     }
 
     // Rapid successive attempts
-    if (attempts >= 2 && (now - lastAttempt) < 5000) {
+    if (attempts >= 2 && now - lastAttempt < 5000) {
       return true;
     }
 
@@ -123,17 +123,17 @@ class AuthService {
   private async getDeviceInfo(): Promise<DeviceInfo> {
     const deviceInfo: DeviceInfo = {
       userAgent: navigator.userAgent,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     // Get IP address (optional, requires external service)
     try {
-      const response = await fetch('https://api.ipify.org?format=json');
+      const response = await fetch("https://api.ipify.org?format=json");
       const data = await response.json();
       deviceInfo.ipAddress = data.ip;
     } catch (error) {
       // IP detection failed, continue without it
-      console.warn('Could not detect IP address');
+      console.warn("Could not detect IP address");
     }
 
     return deviceInfo;

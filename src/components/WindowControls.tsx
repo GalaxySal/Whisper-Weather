@@ -1,30 +1,30 @@
-import { Minus, Square, X } from 'lucide-react'
-import { getCurrentWindow } from '@tauri-apps/api/window'
+import { Minus, Square, X } from "lucide-react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 export default function WindowControls() {
   const handleMinimize = async () => {
     try {
-      await getCurrentWindow().minimize()
+      await getCurrentWindow().minimize();
     } catch (error) {
-      console.error('Minimize error:', error)
+      console.error("Minimize error:", error);
     }
-  }
-  
+  };
+
   const handleMaximize = async () => {
     try {
-      await getCurrentWindow().toggleMaximize()
+      await getCurrentWindow().toggleMaximize();
     } catch (error) {
-      console.error('Maximize error:', error)
+      console.error("Maximize error:", error);
     }
-  }
-  
+  };
+
   const handleClose = async () => {
     try {
-      await getCurrentWindow().close()
+      await getCurrentWindow().close();
     } catch (error) {
-      console.error('Close error:', error)
+      console.error("Close error:", error);
     }
-  }
+  };
 
   return (
     <div className="flex items-center gap-2 p-3">
@@ -50,5 +50,5 @@ export default function WindowControls() {
         <X className="w-1.5 h-1.5 text-red-900" strokeWidth={3} />
       </button>
     </div>
-  )
+  );
 }

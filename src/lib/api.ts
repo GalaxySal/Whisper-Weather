@@ -1,56 +1,60 @@
 // Weather API integration with Rust backend
-import { invoke } from '@tauri-apps/api/core'
+import { invoke } from "@tauri-apps/api/core";
 
 export interface WeatherData {
-  city: string
-  temperature: number
-  condition: string
-  humidity: number
-  wind_speed: number
-  feels_like: number
-  pressure: number
-  visibility: number
-  uv_index: number
-  sunrise: number
-  sunset: number
-  timestamp: number
+  city: string;
+  temperature: number;
+  condition: string;
+  humidity: number;
+  wind_speed: number;
+  feels_like: number;
+  pressure: number;
+  visibility: number;
+  uv_index: number;
+  sunrise: number;
+  sunset: number;
+  timestamp: number;
 }
 
 export interface WeatherRequest {
-  city: string
-  units?: string // metric, imperial, kelvin
+  city: string;
+  units?: string; // metric, imperial, kelvin
 }
 
 // OpenWeatherMap API key - Env dosyasından oku
-const OPENWEATHERMAP_API_KEY = import.meta.env.VITE_OPENWEATHERMAP_API_KEY
+const OPENWEATHERMAP_API_KEY = import.meta.env.VITE_OPENWEATHERMAP_API_KEY;
 
-export async function getWeatherByCity(city: string, units: string = 'metric'): Promise<WeatherData> {
-  const isTauri = typeof window !== 'undefined' && (window as any).__TAURI__ !== undefined;
-  
+export async function getWeatherByCity(
+  city: string,
+  units: string = "metric",
+): Promise<WeatherData> {
+  const isTauri =
+    typeof window !== "undefined" && (window as any).__TAURI__ !== undefined;
+
   if (isTauri) {
     try {
-      console.log('Tauri: Attempting to get weather for city:', city);
+      console.log("Tauri: Attempting to get weather for city:", city);
       // Tauri backend'i kullan
-      const request: WeatherRequest = { city, units }
-      const response = await invoke<any>('get_weather', { request })
-      
-      console.log('Tauri: Raw response from backend:', response);
-      
+      const request: WeatherRequest = { city, units };
+      const response = await invoke<any>("get_weather", { request });
+
+      console.log("Tauri: Raw response from backend:", response);
+
       if (!response.success) {
-        throw new Error(response.message || 'Failed to fetch weather data')
+        throw new Error(response.message || "Failed to fetch weather data");
       }
-      
-      console.log('Tauri: Successfully got weather data:', response.data);
-      return response.data
+
+      console.log("Tauri: Successfully got weather data:", response.data);
+      return response.data;
     } catch (error) {
-      console.error('Tauri: Backend failed, error:', error);
-      
+      console.error("Tauri: Backend failed, error:", error);
+
       // Mock data fallback - hata durumunda mock veri dön
-      console.warn('Tauri failed, using mock data');
+      console.warn("Tauri failed, using mock data");
       return {
         city,
         temperature: Math.floor(Math.random() * 30) + 10,
-        condition: ['Clear', 'Clouds', 'Rain'][Math.floor(Math.random() * 3)],
+        condition: ["Clear", "Clouds", "Rain"][Math.floor(Math.random() * 3)],
         humidity: Math.floor(Math.random() * 40) + 40,
         wind_speed: Math.random() * 10 + 1,
         feels_like: Math.floor(Math.random() * 30) + 10,
@@ -59,30 +63,30 @@ export async function getWeatherByCity(city: string, units: string = 'metric'): 
         uv_index: Math.floor(Math.random() * 10) + 1,
         sunrise: Math.floor(Date.now() / 1000) - 3600,
         sunset: Math.floor(Date.now() / 1000) + 3600,
-        timestamp: Math.floor(Date.now() / 1000)
-      }
+        timestamp: Math.floor(Date.now() / 1000),
+      };
     }
   } else {
     // Web environment - doğrudan OpenWeatherMap API
     try {
       const geoResponse = await fetch(
-        `http://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(city)}&limit=1&appid=${OPENWEATHERMAP_API_KEY}`
-      )
-      
-      if (!geoResponse.ok) throw new Error('Geocoding failed')
-      const geoData = await geoResponse.json()
-      
-      if (geoData.length === 0) throw new Error('City not found')
-      
-      const { lat, lon } = geoData[0]
-      
+        `http://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(city)}&limit=1&appid=${OPENWEATHERMAP_API_KEY}`,
+      );
+
+      if (!geoResponse.ok) throw new Error("Geocoding failed");
+      const geoData = await geoResponse.json();
+
+      if (geoData.length === 0) throw new Error("City not found");
+
+      const { lat, lon } = geoData[0];
+
       const weatherResponse = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${OPENWEATHERMAP_API_KEY}&units=${units}`
-      )
-      
-      if (!weatherResponse.ok) throw new Error('Weather API failed')
-      const weatherData = await weatherResponse.json()
-      
+        `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${OPENWEATHERMAP_API_KEY}&units=${units}`,
+      );
+
+      if (!weatherResponse.ok) throw new Error("Weather API failed");
+      const weatherData = await weatherResponse.json();
+
       return {
         city: weatherData.name,
         temperature: Math.round(weatherData.main.temp),
@@ -95,15 +99,15 @@ export async function getWeatherByCity(city: string, units: string = 'metric'): 
         uv_index: 0,
         sunrise: weatherData.sys.sunrise,
         sunset: weatherData.sys.sunset,
-        timestamp: Math.floor(Date.now() / 1000)
-      }
+        timestamp: Math.floor(Date.now() / 1000),
+      };
     } catch (error) {
-      console.error('Web: API failed:', error);
+      console.error("Web: API failed:", error);
       // Mock data fallback
       return {
         city,
         temperature: Math.floor(Math.random() * 30) + 10,
-        condition: ['Clear', 'Clouds', 'Rain'][Math.floor(Math.random() * 3)],
+        condition: ["Clear", "Clouds", "Rain"][Math.floor(Math.random() * 3)],
         humidity: Math.floor(Math.random() * 40) + 40,
         wind_speed: Math.random() * 10 + 1,
         feels_like: Math.floor(Math.random() * 30) + 10,
@@ -112,29 +116,39 @@ export async function getWeatherByCity(city: string, units: string = 'metric'): 
         uv_index: Math.floor(Math.random() * 10) + 1,
         sunrise: Math.floor(Date.now() / 1000) - 3600,
         sunset: Math.floor(Date.now() / 1000) + 3600,
-        timestamp: Math.floor(Date.now() / 1000)
-      }
+        timestamp: Math.floor(Date.now() / 1000),
+      };
     }
   }
 }
 
 export async function searchCitiesWeb(query: string): Promise<string[]> {
   try {
-    const response = await invoke<any>('search_weather_cities', { query })
-    
+    const response = await invoke<any>("search_weather_cities", { query });
+
     if (!response.success) {
-      throw new Error(response.message || 'Failed to search cities')
+      throw new Error(response.message || "Failed to search cities");
     }
-    
-    return response.data
+
+    return response.data;
   } catch (error) {
     // Fallback cities for web environment
     const turkishCities = [
-      'İstanbul', 'Ankara', 'İzmir', 'Bursa', 'Adana', 'Gaziantep',
-      'Konya', 'Antalya', 'Diyarbakır', 'Mersin', 'Kayseri', 'Eskişehir'
-    ]
-    return turkishCities.filter(city => 
-      city.toLowerCase().includes(query.toLowerCase())
-    )
+      "İstanbul",
+      "Ankara",
+      "İzmir",
+      "Bursa",
+      "Adana",
+      "Gaziantep",
+      "Konya",
+      "Antalya",
+      "Diyarbakır",
+      "Mersin",
+      "Kayseri",
+      "Eskişehir",
+    ];
+    return turkishCities.filter((city) =>
+      city.toLowerCase().includes(query.toLowerCase()),
+    );
   }
 }

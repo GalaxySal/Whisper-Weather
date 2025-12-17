@@ -1,5 +1,5 @@
-import { motion, AnimatePresence, MotionProps, Variants } from 'framer-motion'
-import { ReactNode, forwardRef } from 'react'
+import { motion, AnimatePresence, MotionProps, Variants } from "framer-motion";
+import { ReactNode, forwardRef } from "react";
 
 // Performance optimized variants
 const containerVariants: Variants = {
@@ -11,94 +11,94 @@ const containerVariants: Variants = {
       delayChildren: 0.2,
     },
   },
-}
+};
 
 const itemVariants: Variants = {
-  hidden: { 
-    opacity: 0, 
+  hidden: {
+    opacity: 0,
     y: 20,
-    scale: 0.95
+    scale: 0.95,
   },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     y: 0,
     scale: 1,
     transition: {
       type: "spring" as const,
       stiffness: 300,
       damping: 24,
-      duration: 0.3
-    }
+      duration: 0.3,
+    },
   },
-}
+};
 
 const pageVariants: Variants = {
-  hidden: { 
-    opacity: 0, 
+  hidden: {
+    opacity: 0,
     x: 20,
-    scale: 0.98
+    scale: 0.98,
   },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     x: 0,
     scale: 1,
     transition: {
       type: "spring" as const,
       stiffness: 300,
       damping: 30,
-      duration: 0.4
-    }
+      duration: 0.4,
+    },
   },
-  exit: { 
-    opacity: 0, 
+  exit: {
+    opacity: 0,
     x: -20,
     scale: 0.98,
     transition: {
-      duration: 0.2
-    }
+      duration: 0.2,
+    },
   },
-}
+};
 
 const modalVariants: Variants = {
-  hidden: { 
-    opacity: 0, 
+  hidden: {
+    opacity: 0,
     scale: 0.9,
-    y: 20
+    y: 20,
   },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     scale: 1,
     y: 0,
     transition: {
       type: "spring" as const,
       stiffness: 400,
       damping: 25,
-      duration: 0.3
-    }
+      duration: 0.3,
+    },
   },
-  exit: { 
-    opacity: 0, 
+  exit: {
+    opacity: 0,
     scale: 0.9,
     y: 20,
     transition: {
-      duration: 0.2
-    }
+      duration: 0.2,
+    },
   },
-}
+};
 
 // Performance optimized motion components
 interface MotionContainerProps {
-  children: ReactNode
-  className?: string
-  initial?: string
-  animate?: string
+  children: ReactNode;
+  className?: string;
+  initial?: string;
+  animate?: string;
 }
 
-export const MotionContainer = ({ 
-  children, 
-  className = "", 
+export const MotionContainer = ({
+  children,
+  className = "",
   initial = "hidden",
-  animate = "visible" 
+  animate = "visible",
 }: MotionContainerProps) => (
   <motion.div
     className={className}
@@ -109,22 +109,22 @@ export const MotionContainer = ({
   >
     {children}
   </motion.div>
-)
+);
 
 interface MotionItemProps {
-  children: ReactNode
-  className?: string
-  delay?: number
-  initial?: string
-  animate?: string
+  children: ReactNode;
+  className?: string;
+  delay?: number;
+  initial?: string;
+  animate?: string;
 }
 
-export const MotionItem = ({ 
-  children, 
-  className = "", 
+export const MotionItem = ({
+  children,
+  className = "",
   delay = 0,
   initial = "hidden",
-  animate = "visible" 
+  animate = "visible",
 }: MotionItemProps) => (
   <motion.div
     className={className}
@@ -132,22 +132,25 @@ export const MotionItem = ({
     initial={initial}
     animate={animate}
     transition={{ delay }}
-    whileHover={{ 
-      scale: 1.02, 
-      transition: { duration: 0.2 } 
+    whileHover={{
+      scale: 1.02,
+      transition: { duration: 0.2 },
     }}
-    style={{ willChange: 'transform, opacity' }}
+    style={{ willChange: "transform, opacity" }}
   >
     {children}
   </motion.div>
-)
+);
 
 interface PageTransitionProps {
-  children: ReactNode
-  className?: string
+  children: ReactNode;
+  className?: string;
 }
 
-export const PageTransition = ({ children, className = "" }: PageTransitionProps) => (
+export const PageTransition = ({
+  children,
+  className = "",
+}: PageTransitionProps) => (
   <motion.div
     className={className}
     variants={pageVariants}
@@ -155,19 +158,23 @@ export const PageTransition = ({ children, className = "" }: PageTransitionProps
     animate="visible"
     exit="exit"
     layout
-    style={{ willChange: 'transform, opacity' }}
+    style={{ willChange: "transform, opacity" }}
   >
     {children}
   </motion.div>
-)
+);
 
 interface ModalMotionProps {
-  children: ReactNode
-  className?: string
-  isOpen: boolean
+  children: ReactNode;
+  className?: string;
+  isOpen: boolean;
 }
 
-export const ModalMotion = ({ children, className = "", isOpen }: ModalMotionProps) => (
+export const ModalMotion = ({
+  children,
+  className = "",
+  isOpen,
+}: ModalMotionProps) => (
   <AnimatePresence mode="wait">
     {isOpen && (
       <motion.div
@@ -177,20 +184,20 @@ export const ModalMotion = ({ children, className = "", isOpen }: ModalMotionPro
         animate="visible"
         exit="exit"
         layout
-        style={{ willChange: 'transform, opacity' }}
+        style={{ willChange: "transform, opacity" }}
       >
         {children}
       </motion.div>
     )}
   </AnimatePresence>
-)
+);
 
 // Optimized button with hover effects
 interface MotionButtonProps extends MotionProps {
-  children: ReactNode
-  className?: string
-  onClick?: () => void
-  disabled?: boolean
+  children: ReactNode;
+  className?: string;
+  onClick?: () => void;
+  disabled?: boolean;
 }
 
 export const MotionButton = forwardRef<HTMLButtonElement, MotionButtonProps>(
@@ -200,47 +207,47 @@ export const MotionButton = forwardRef<HTMLButtonElement, MotionButtonProps>(
       className={className}
       onClick={onClick}
       disabled={disabled}
-      whileHover={{ 
+      whileHover={{
         scale: disabled ? 1 : 1.05,
-        transition: { duration: 0.2 }
+        transition: { duration: 0.2 },
       }}
-      whileTap={{ 
+      whileTap={{
         scale: disabled ? 1 : 0.95,
-        transition: { duration: 0.1 }
+        transition: { duration: 0.1 },
       }}
-      style={{ willChange: 'transform' }}
+      style={{ willChange: "transform" }}
       {...props}
     >
       {children}
     </motion.button>
-  )
-)
+  ),
+);
 
-MotionButton.displayName = 'MotionButton'
+MotionButton.displayName = "MotionButton";
 
 // Optimized card with hover effects
 interface MotionCardProps {
-  children: ReactNode
-  className?: string
+  children: ReactNode;
+  className?: string;
 }
 
 export const MotionCard = ({ children, className = "" }: MotionCardProps) => (
   <motion.div
     className={className}
-    whileHover={{ 
+    whileHover={{
       y: -4,
-      transition: { duration: 0.2 }
+      transition: { duration: 0.2 },
     }}
-    style={{ willChange: 'transform' }}
+    style={{ willChange: "transform" }}
   >
     {children}
   </motion.div>
-)
+);
 
 // List stagger animation
 interface MotionListProps {
-  children: ReactNode
-  className?: string
+  children: ReactNode;
+  className?: string;
 }
 
 export const MotionList = ({ children, className = "" }: MotionListProps) => (
@@ -253,31 +260,31 @@ export const MotionList = ({ children, className = "" }: MotionListProps) => (
   >
     {children}
   </motion.div>
-)
+);
 
 // Fade in animation for any element
 interface FadeInProps {
-  children: ReactNode
-  className?: string
-  direction?: 'up' | 'down' | 'left' | 'right'
-  delay?: number
+  children: ReactNode;
+  className?: string;
+  direction?: "up" | "down" | "left" | "right";
+  delay?: number;
 }
 
-export const FadeIn = ({ 
-  children, 
-  className = "", 
-  direction = 'up',
-  delay = 0 
+export const FadeIn = ({
+  children,
+  className = "",
+  direction = "up",
+  delay = 0,
 }: FadeInProps) => {
   const variants: Variants = {
-    hidden: { 
+    hidden: {
       opacity: 0,
-      ...(direction === 'up' && { y: 20 }),
-      ...(direction === 'down' && { y: -20 }),
-      ...(direction === 'left' && { x: 20 }),
-      ...(direction === 'right' && { x: -20 }),
+      ...(direction === "up" && { y: 20 }),
+      ...(direction === "down" && { y: -20 }),
+      ...(direction === "left" && { x: 20 }),
+      ...(direction === "right" && { x: -20 }),
     },
-    visible: { 
+    visible: {
       opacity: 1,
       y: 0,
       x: 0,
@@ -285,10 +292,10 @@ export const FadeIn = ({
         type: "spring" as const,
         stiffness: 300,
         damping: 24,
-        delay
-      }
-    }
-  }
+        delay,
+      },
+    },
+  };
 
   return (
     <motion.div
@@ -296,33 +303,37 @@ export const FadeIn = ({
       variants={variants}
       initial="hidden"
       animate="visible"
-      style={{ willChange: 'transform, opacity' }}
+      style={{ willChange: "transform, opacity" }}
     >
       {children}
     </motion.div>
-  )
-}
+  );
+};
 
 // Scale animation
 interface ScaleInProps {
-  children: ReactNode
-  className?: string
-  delay?: number
+  children: ReactNode;
+  className?: string;
+  delay?: number;
 }
 
-export const ScaleIn = ({ children, className = "", delay = 0 }: ScaleInProps) => (
+export const ScaleIn = ({
+  children,
+  className = "",
+  delay = 0,
+}: ScaleInProps) => (
   <motion.div
     className={className}
     initial={{ opacity: 0, scale: 0.9 }}
     animate={{ opacity: 1, scale: 1 }}
-    transition={{ 
+    transition={{
       type: "spring",
       stiffness: 400,
       damping: 25,
-      delay 
+      delay,
     }}
-    style={{ willChange: 'transform, opacity' }}
+    style={{ willChange: "transform, opacity" }}
   >
     {children}
   </motion.div>
-)
+);

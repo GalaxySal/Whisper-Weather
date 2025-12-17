@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invoke } from "@tauri-apps/api/core";
 
 export interface TunnelConfig {
   main_domain: string;
@@ -10,7 +10,7 @@ export interface TunnelConfig {
 
 export interface TunnelStatus {
   is_active: boolean;
-  current_mode: 'MainDomain' | 'Fallback' | 'Direct';
+  current_mode: "MainDomain" | "Fallback" | "Direct";
   main_domain_status: boolean;
   fallback_status: boolean;
   last_check: number;
@@ -18,9 +18,9 @@ export interface TunnelStatus {
 }
 
 export enum TunnelMode {
-  MainDomain = 'MainDomain',
-  Fallback = 'Fallback',
-  Direct = 'Direct'
+  MainDomain = "MainDomain",
+  Fallback = "Fallback",
+  Direct = "Direct",
 }
 
 class TunnelService {
@@ -34,76 +34,79 @@ class TunnelService {
       // Get initial config and status
       this.config = await this.getConfig();
       this.status = await this.getStatus();
-      
+
       // Start health monitoring
       this.startHealthMonitoring();
-      
-      console.log('Tunnel service initialized', { config: this.config, status: this.status });
+
+      console.log("Tunnel service initialized", {
+        config: this.config,
+        status: this.status,
+      });
     } catch (error) {
-      console.error('Failed to initialize tunnel service:', error);
-      
+      console.error("Failed to initialize tunnel service:", error);
+
       // Fallback config for single domain
       this.config = {
-        main_domain: 'https://www.zentaira.com', // www yönlendirmesi
-        subdomain: 'whisper-weather',
+        main_domain: "https://www.zentaira.com", // www yönlendirmesi
+        subdomain: "whisper-weather",
         target_port: 3000,
-        health_check_path: '/', // Ana sayfayı kontrol et
-        fallback_urls: ['https://zentaira.com']
+        health_check_path: "/", // Ana sayfayı kontrol et
+        fallback_urls: ["https://zentaira.com"],
       };
     }
   }
 
   async getConfig(): Promise<TunnelConfig> {
     try {
-      return await invoke<TunnelConfig>('get_tunnel_config');
+      return await invoke<TunnelConfig>("get_tunnel_config");
     } catch (error) {
-      console.error('Failed to get tunnel config:', error);
+      console.error("Failed to get tunnel config:", error);
       throw error;
     }
   }
 
   async updateConfig(config: TunnelConfig): Promise<void> {
     try {
-      await invoke('update_tunnel_config', { config });
+      await invoke("update_tunnel_config", { config });
       this.config = config;
-      console.log('Tunnel config updated', config);
+      console.log("Tunnel config updated", config);
     } catch (error) {
-      console.error('Failed to update tunnel config:', error);
+      console.error("Failed to update tunnel config:", error);
       throw error;
     }
   }
 
   async getStatus(): Promise<TunnelStatus> {
     try {
-      const status = await invoke<TunnelStatus>('get_tunnel_status');
+      const status = await invoke<TunnelStatus>("get_tunnel_status");
       this.status = status;
       return status;
     } catch (error) {
-      console.error('Failed to get tunnel status:', error);
+      console.error("Failed to get tunnel status:", error);
       throw error;
     }
   }
 
   async checkHealth(): Promise<TunnelStatus> {
     try {
-      const status = await invoke<TunnelStatus>('check_tunnel_health');
+      const status = await invoke<TunnelStatus>("check_tunnel_health");
       this.status = status;
       return status;
     } catch (error) {
-      console.error('Failed to check tunnel health:', error);
+      console.error("Failed to check tunnel health:", error);
       throw error;
     }
   }
 
   async switchMode(mode: TunnelMode): Promise<void> {
     try {
-      await invoke('switch_tunnel_mode', { mode });
-      console.log('Switched to tunnel mode:', mode);
-      
+      await invoke("switch_tunnel_mode", { mode });
+      console.log("Switched to tunnel mode:", mode);
+
       // Refresh status after mode switch
       await this.getStatus();
     } catch (error) {
-      console.error('Failed to switch tunnel mode:', error);
+      console.error("Failed to switch tunnel mode:", error);
       throw error;
     }
   }
@@ -117,7 +120,7 @@ class TunnelService {
       try {
         await this.checkHealth();
       } catch (error) {
-        console.error('Health check failed:', error);
+        console.error("Health check failed:", error);
       }
     }, this.HEALTH_CHECK_INTERVAL);
   }
@@ -127,12 +130,12 @@ class TunnelService {
     // Only use tunnel for health checks, not for API requests
     // API requests should go directly to the backend
     const port = this.config?.target_port || 1420;
-    
+
     // In production Tauri, use tauri://localhost for API calls
-    if (typeof window !== 'undefined' && (window as any).__TAURI__) {
-      return 'tauri://localhost/api';
+    if (typeof window !== "undefined" && (window as any).__TAURI__) {
+      return "tauri://localhost/api";
     }
-    
+
     return `http://localhost:${port}/api`;
   }
 
@@ -140,12 +143,12 @@ class TunnelService {
   getWeatherApiUrl(): string {
     // Weather API should go directly to weather service, not through Zentaira
     const port = this.config?.target_port || 1420;
-    
+
     // In production Tauri, use tauri://localhost for API calls
-    if (typeof window !== 'undefined' && (window as any).__TAURI__) {
-      return 'tauri://localhost/api/weather';
+    if (typeof window !== "undefined" && (window as any).__TAURI__) {
+      return "tauri://localhost/api/weather";
     }
-    
+
     return `http://localhost:${port}/api/weather`;
   }
 
@@ -153,12 +156,12 @@ class TunnelService {
   getAuthApiUrl(): string {
     // Auth API should go directly to auth service, not through Zentaira
     const port = this.config?.target_port || 1420;
-    
+
     // In production Tauri, use tauri://localhost for API calls
-    if (typeof window !== 'undefined' && (window as any).__TAURI__) {
-      return 'tauri://localhost/api/auth';
+    if (typeof window !== "undefined" && (window as any).__TAURI__) {
+      return "tauri://localhost/api/auth";
     }
-    
+
     return `http://localhost:${port}/api/auth`;
   }
 
@@ -167,41 +170,52 @@ class TunnelService {
     // For API requests, always use the appropriate backend URL
     // Tunnel is only for health checks and routing status
     const port = this.config?.target_port || 1420;
-    
+
     // In production Tauri, use tauri://localhost for API calls
     let fullUrl: string;
-    if (typeof window !== 'undefined' && (window as any).__TAURI__) {
-      fullUrl = url.startsWith('http') || url.startsWith('tauri://') ? url : `tauri://localhost${url}`;
+    if (typeof window !== "undefined" && (window as any).__TAURI__) {
+      fullUrl =
+        url.startsWith("http") || url.startsWith("tauri://")
+          ? url
+          : `tauri://localhost${url}`;
     } else {
-      fullUrl = url.startsWith('http') ? url : `http://localhost:${port}${url}`;
+      fullUrl = url.startsWith("http") ? url : `http://localhost:${port}${url}`;
     }
 
     try {
       const response = await fetch(fullUrl, options);
-      
+
       // If request fails and we're not already in fallback mode, try fallback
       if (!response.ok && this.status?.current_mode !== TunnelMode.Fallback) {
-        console.warn('Main domain request failed, trying fallback');
+        console.warn("Main domain request failed, trying fallback");
         await this.switchMode(TunnelMode.Fallback);
-        
+
         // Retry with fallback URL
-        const fallbackUrl = url.startsWith('http') || url.startsWith('tauri://') ? url : 
-          (typeof window !== 'undefined' && (window as any).__TAURI__ ? `tauri://localhost${url}` : `http://localhost:${port}${url}`);
+        const fallbackUrl =
+          url.startsWith("http") || url.startsWith("tauri://")
+            ? url
+            : typeof window !== "undefined" && (window as any).__TAURI__
+              ? `tauri://localhost${url}`
+              : `http://localhost:${port}${url}`;
         return await fetch(fallbackUrl, options);
       }
-      
+
       return response;
     } catch (error) {
       // If request fails and we're not already in fallback mode, try fallback
       if (this.status?.current_mode !== TunnelMode.Fallback) {
-        console.warn('Main domain request failed, trying fallback');
+        console.warn("Main domain request failed, trying fallback");
         await this.switchMode(TunnelMode.Fallback);
-        
-        const fallbackUrl = url.startsWith('http') || url.startsWith('tauri://') ? url : 
-          (typeof window !== 'undefined' && (window as any).__TAURI__ ? `tauri://localhost${url}` : `http://localhost:${port}${url}`);
+
+        const fallbackUrl =
+          url.startsWith("http") || url.startsWith("tauri://")
+            ? url
+            : typeof window !== "undefined" && (window as any).__TAURI__
+              ? `tauri://localhost${url}`
+              : `http://localhost:${port}${url}`;
         return await fetch(fallbackUrl, options);
       }
-      
+
       throw error;
     }
   }
@@ -223,7 +237,7 @@ class TunnelService {
 
   // Get current mode for UI
   getCurrentMode(): TunnelMode {
-    return this.status?.current_mode as TunnelMode ?? TunnelMode.MainDomain;
+    return (this.status?.current_mode as TunnelMode) ?? TunnelMode.MainDomain;
   }
 
   // Get response time for UI
