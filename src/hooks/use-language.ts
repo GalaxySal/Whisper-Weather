@@ -18,7 +18,7 @@ export function useLanguage() {
 
   useEffect(() => {
     loadLanguage()
-  }, [])
+  }, [loadLanguage])
 
   const changeLanguage = async (newLanguage: Language) => {
     setLanguage(newLanguage)

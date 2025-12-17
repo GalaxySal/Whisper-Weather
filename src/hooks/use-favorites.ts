@@ -17,14 +17,14 @@ export function useFavorites() {
 
   useEffect(() => {
     loadFavorites()
-  }, [])
+  }, [loadFavorites])
 
   // Save favorites when they change
   useEffect(() => {
     if (favorites.length > 0) {
       saveFavoriteCities(favorites)
     }
-  }, [favorites])
+  }, [favorites, saveFavoriteCities])
 
   const addFavorite = (city: string) => {
     setFavorites(prev => {

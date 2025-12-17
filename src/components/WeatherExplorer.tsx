@@ -54,7 +54,7 @@ function WeatherExplorer() {
     } finally {
       setIsLoading(false)
     }
-  }, [language])
+  }, [])
 
   const calculateStats = (history: WeatherSearch[]) => {
     const cityCounts = history.reduce((acc: any, h: any) => {

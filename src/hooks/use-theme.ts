@@ -200,11 +200,11 @@ export function useTheme() {
     return () => {
       // Unlisten will be called when the component unmounts
     }
-  }, [])
+  }, [checkSystemTheme, listenToRustThemeChanges, loadTheme])
 
   useEffect(() => {
     applyTheme()
-  }, [theme, systemTheme])
+  }, [theme, systemTheme, applyTheme])
 
   return {
     theme,
